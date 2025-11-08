@@ -1,0 +1,197 @@
+# Exposure Logic Configuration
+# Tracks and manages portfolio-level risk exposure across all sports and bet types
+# Philosophy: Surface all exposure transparently; never enforce hard limits
+
+# Exposure Tracking Methods
+exposure_tracking:
+  # Level 1: Individual Bet Exposure
+  individual_bet:
+    tracked_by:
+      - bet_id
+      - sport
+      - league
+      - bet_type
+      - wager_size
+      - expected_win
+      - timestamp
+    categories:
+      - moneyline
+      - spread
+      - total
+      - parlay
+      - props
+      - live
+  
+  # Level 2: Entity Exposure (Team/Athlete)
+  entity_exposure:
+    tracked_by:
+      - entity_type
+      - entity_id
+      - sport
+      - total_wagers_on_entity
+      - total_exposure_pct_of_bankroll
+      - active_bets_count
+    thresholds_for_surfacing:
+      single_entity_max_pct: 0.25
+      single_entity_warn_pct: 0.15
+      single_entity_notice_pct: 0.08
+  
+  # Level 3: Correlation Exposure
+  correlation_exposure:
+    definition: "Exposure to correlated outcomes (same game, same team)"
+    tracked_by:
+      - correlation_cluster_id
+      - bet_count_in_cluster
+      - total_wagers_in_cluster
+      - correlation_coefficient
+      - net_exposure_if_cluster_loses
+    high_correlation_threshold: 0.70
+  
+  # Level 4: Sport-Specific Exposure
+  sport_exposure:
+    by_sport: [NBA, MLB, NFL, NHL, Soccer]
+    tracked_by:
+      - sport
+      - total_wagers
+      - exposure_pct_of_bankroll
+      - game_count
+      - leverage_ratio
+    thresholds_for_surfacing:
+      max_sport_pct: 0.40
+      warn_sport_pct: 0.30
+  
+  # Level 5: Portfolio-Level Exposure
+  portfolio_exposure:
+    total_bankroll_exposure: true
+    tracked_by:
+      - total_wagers_outstanding
+      - total_exposure_pct_of_bankroll
+      - correlated_loss_scenario: "worst-case simultaneous loss"
+      - days_until_all_bets_resolved
+    thresholds_for_surfacing:
+      max_portfolio_leverage: 2.0
+      warn_portfolio_leverage: 1.5
+
+# Correlation Penalty Calculations
+correlation_penalty:
+  philosophy: "Penalize highly correlated bets; surface the penalty, don't block the bet"
+  
+  calculation_method:
+    base_formula: |
+      correlation_penalty = base_rsi * (1 + correlation_adjustment)
+      where:
+        base_rsi = RSI score from rsi_model.yaml
+        correlation_adjustment = sum of correlations with active bets
+  
+  correlation_sources:
+    same_game: 0.95
+    same_team: 0.85
+    same_sport_same_day: 0.60
+    same_sport_diff_day: 0.25
+    different_sport: 0.10
+  
+  penalty_application:
+    adjustment_type: "additive to RSI"
+    example: "If bet has 2 correlated bets (0.85 + 0.60), correlation adjustment = +0.29 to RSI"
+  
+  thresholds_for_surfacing:
+    penalty_magnitude_warn: 0.20
+    penalty_magnitude_notice: 0.10
+
+# Portfolio-Level Aggregation Rules
+portfolio_aggregation:
+  philosophy: "Transparent aggregation, never enforce hard blocks"
+  
+  aggregation_rules:
+    exposure_calculation:
+      total_exposure: "sum(all_wager_sizes) / bankroll_size"
+      algorithm: "weighted by odds; accounts for all active bets"
+    
+    worst_case_scenario:
+      definition: "Simultaneous loss of all correlated bets"
+      calculation: "worst_case_loss = sum(wagers_in_highest_correlation_cluster)"
+      surfaced_as: "Maximum simultaneous loss scenario: {loss_pct}% of bankroll"
+    
+    portfolio_volatility:
+      definition: "Variance of portfolio outcomes across all active bets"
+      calculation: "portfolio_std_dev = sqrt(sum((wager_size * bet_variance)^2))"
+      surfaced_as: "Portfolio volatility (1-sigma): {std_dev}% of bankroll"
+
+# Exposure Recommendations vs. Hard Limits
+exposure_limits:
+  philosophy: "All limits are recommendations surfaced to user; NO hard enforcement"
+  
+  recommended_limits:
+    single_bet_max_pct: 0.05
+    single_entity_max_pct: 0.20
+    single_sport_max_pct: 0.35
+    portfolio_max_leverage: 1.8
+    correlation_penalty_warn: 0.25
+  
+  user_autonomy:
+    - User can exceed any limit
+    - System surfaces all metrics with no hidden calculations
+    - All exposure recommendations are informational only
+    - No blocking, no soft-pedaling, no "are you sure" dialogs
+    - User controls all risk decisions
+    - User controls all risk decisions
+
+# Exposure Surfacing Format
+surfacing:
+  when_to_surface:
+    - On every bet slip intake
+    - On portfolio dashboard (real-time update)
+    - On exposure report (detailed view)
+  
+  what_to_surface:
+    individual_bet_exposure:
+      - "This bet is {X}% of your bankroll"
+      - "You'll have {Y}% exposure on {entity} if this bet is placed"
+      - "Correlation adjustment: +{Z} to RSI (from {N} active correlated bets)"
+    
+    entity_exposure:
+      - "{Entity} current exposure: {X}% of bankroll ({N} active bets)"
+      - "Adding this bet brings {entity} exposure to {X+delta}%"
+    
+    portfolio_exposure:
+      - "Current portfolio exposure: {X}% of bankroll ({N} active bets)"
+      - "If placed, portfolio exposure: {X+delta}%"
+      - "Worst-case loss scenario (all correlated bets lose): {loss}% of bankroll"
+      - "Portfolio volatility (1-sigma): {std_dev}%"
+  
+  slip_intake_format:
+    display: "See format below"
+    example:
+      "Bet Size: $100 (3% of bankroll)"
+      "RSI Base: 0.45"
+      "Correlation RSI Adj: +0.12"
+      "RSI Adjusted: 0.57"
+      "Entity Exposure: 15% of bankroll → 18% if placed"
+      "Portfolio Exposure: 45% of bankroll → 48% if placed"
+      "Worst-Case Loss: 12% of bankroll"
+      "Portfolio Volatility: 8% (1-sigma)"
+
+# Exposure Workflow Integration
+workflow_integration:
+  intake_phase:
+    - Surface all exposure metrics on slip
+    - Calculate correlation penalties
+    - Flag entities/sports/portfolio near thresholds
+    - Present metrics, NOT recommendations
+  
+  placement_phase:
+    - Log exposure state before bet placement
+    - Record all exposure metrics with bet
+    - No blocking; user approves all bets
+  
+  monitoring_phase:
+    - Track all active bets continuously
+    - Update entity/portfolio exposure in real-time
+    - Surface changes if exposure crosses thresholds
+    - Alert on significant portfolio moves
+  
+  resolution_phase:
+    - Log final bet outcome
+    - Update cumulative exposure metrics
+    - Calculate performance vs. exposure taken
+    - Feed into audit trail for monthly improvement cycle
