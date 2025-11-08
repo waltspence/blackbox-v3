@@ -1,0 +1,284 @@
+# MLB Rubric - Bet Quality Grading
+# Specialized rubric for Major League Baseball betting
+# Accounts for sport-specific factors: weather, pitcher matchups, park effects
+
+metadata:
+  sport: MLB
+  description: Comprehensive 5-dimension rubric for MLB bet quality assessment
+  version: 2.0
+  last_updated: 2025-11-08
+
+# ============================================================================
+# RUBRIC DIMENSIONS (5 total, weighted)
+# ============================================================================
+
+dimensions:
+  
+  # Dimension 1: Edge Quality (Weight: 0.35)
+  # Measures statistical significance of identified edge vs. market
+  edge_quality:
+    weight: 0.35
+    description: |
+      Quantifies the depth and reliability of the identified edge.
+      For MLB, must account for pitcher metrics, team splits, and statistical noise.
+      Sample size is CRITICAL due to limited games per season.
+    scoring:
+      1.0:
+        - Edge verified by 3+ independent methods (pitcher stats, team trends, line movement)
+        - Historical WR > 55% across 50+ similar situations
+        - Multiple data sources confirm edge (Vegas, sharp movement, stats)
+      0.85:
+        - Edge verified by 2 independent methods
+        - Historical WR 52-55% across 30-50 similar situations
+        - Partial confirmation across sources
+      0.70:
+        - Edge verified by 1 primary method (e.g., pitcher matchup advantage)
+        - Historical WR 50-52% across 20-30 situations
+        - Limited data but statistically meaningful
+      0.50:
+        - Edge identified but limited verification
+        - Historical WR near 50% or small sample (10-20)
+      0.25:
+        - Weak statistical edge
+        - Very limited validation data
+      0.0:
+        - No edge identified
+        - OR edge fails verification tests
+
+  # Dimension 2: Pitcher Confirmation (Weight: 0.25)
+  # Validates starting pitcher matchup and availability (MLB-specific)
+  pitcher_confirmation:
+    weight: 0.25
+    description: |
+      Ensures the pitcher matchup thesis is locked and confirmed.
+      Pitcher changes/injuries invalidate entire thesis.
+      Must be confirmed within 24 hours of game time.
+    scoring:
+      1.0:
+        - Both starting pitchers confirmed 24+ hours before game
+        - Ace-level pitcher in favorable matchup
+        - Bullpen quality understood
+      0.85:
+        - Both SPs confirmed, one is slightly above average
+        - Bullpen depth acceptable
+      0.70:
+        - Both SPs confirmed but one is below-average
+        - Or confirmed < 12 hours before game
+        - Does not invalidate core edge
+      0.50:
+        - One pitcher confirmed, other pending
+        - Last-minute pitching change likely
+      0.25:
+        - Both pitchers unconfirmed or changes likely
+        - Edge thesis compromised
+      0.0:
+        - Starting pitcher unknown or injured
+        - Cannot validate pitcher matchup thesis
+
+  # Dimension 3: Weather/Environmental Risk (Weight: 0.15)
+  # MLB-specific: weather dramatically affects outcomes and line integrity
+  weather_environmental_risk:
+    weight: 0.15
+    description: |
+      Measures environmental factors affecting game outcomes.
+      Wind direction/speed, temperature, humidity all impact ball flight.
+      Weather changes can erase edge or create line inefficiency.
+    scoring:
+      1.0:
+        - Stable weather forecast (< 5 mph wind, 70-75°F)
+        - Forecast locked in (low probability of change)
+      0.85:
+        - Moderate wind (5-10 mph) or temperature (60-80°F)
+        - Forecast moderately confident
+      0.70:
+        - Significant wind (10-15 mph) or temperature extremes
+        - Forecast 80%+ confidence
+      0.50:
+        - Unpredictable weather (15-20 mph wind, variable temp)
+        - Forecast confidence < 80%
+      0.25:
+        - Severe weather risk (rain likely, high winds)
+        - May cause game cancellation or significant delay
+      0.0:
+        - Extreme weather (severe storms) or game cancellation risk
+        - Cannot reliably project outcome
+
+  # Dimension 4: Market Efficiency (Weight: 0.15)
+  # Assesses liquidity and line movement dynamics for execution
+  market_efficiency:
+    weight: 0.15
+    description: |
+      Measures market depth and line stability.
+      Better efficiency = more reliable odds, less slippage.
+      MLB markets are generally liquid but handle varies by book.
+    scoring:
+      1.0:
+        - High volume across major books (> 500K combined)
+        - Line stable within ±0.5 across books
+        - Tight bid-ask spreads on moneyline
+      0.85:
+        - Good volume (250K-500K)
+        - Line movement ±1.0 across books
+      0.70:
+        - Moderate volume (100K-250K)
+        - Line movement ±1.5
+      0.50:
+        - Lower volume (50K-100K)
+        - Line movement ±2.0
+      0.25:
+        - Thin market (< 50K volume)
+        - Significant line variation or sharp movement
+      0.0:
+        - Minimal liquidity, execution risk
+        - Line highly unstable
+
+  # Dimension 5: Volatility & Park Effects (Weight: 0.10)
+  # MLB-specific: ballpark dimensions, offensive environment
+  volatility:
+    weight: 0.10
+    description: |
+      Quantifies expected scoring variance and park effects.
+      Green Monster vs. Yankees Stadium dramatically affect outcomes.
+      Pitcher-favorable parks reduce scoring volatility.
+    scoring:
+      1.0:
+        - Pitcher-favorable park (Yankees Stadium, Petco)
+        - Low scoring environment expected
+        - Historical variance low
+      0.85:
+        - Neutral park effects
+        - Expected runs within 1 standard deviation of average
+      0.70:
+        - Slightly hitter-favorable park (Coors field, others)
+        - Expected volatility moderate
+      0.50:
+        - Very hitter-friendly park (Coors, Chase Field)
+        - Higher scoring volatility expected
+      0.25:
+        - Extreme park effects
+        - Scoring highly volatile
+      0.0:
+        - Extreme hitter-friendly conditions with unsure pitcher matchup
+        - Outcome highly unpredictable
+
+# ============================================================================
+# GRADING SCALE
+# ============================================================================
+
+grading_scale:
+  formula: |
+    RUBRIC_SCORE = (edge_quality × 0.35) +
+                   (pitcher_confirmation × 0.25) +
+                   (weather_environmental_risk × 0.15) +
+                   (market_efficiency × 0.15) +
+                   (volatility × 0.10)
+  
+  grades:
+    A:
+      range: [0.85, 1.0]
+      interpretation: |
+        Elite-quality bet. Pitcher matchup confirmed, weather locked, strong edge.
+        These are target bets for maximum allocation.
+    
+    B:
+      range: [0.70, 0.85)
+      interpretation: |
+        Strong-quality bet. Core edge solid, pitcher matchup good.
+        Recommend 75-100% of standard allocation.
+    
+    C:
+      range: [0.55, 0.70)
+      interpretation: |
+        Decent-quality bet. Edge present but environmental concerns.
+        Recommend 50-75% of standard allocation.
+    
+    D:
+      range: [0.40, 0.55)
+      interpretation: |
+        Below-average quality. Multiple concerns (weather, pitcher uncertainty).
+        Recommend 25-50% of standard allocation (skip if pitcher unconfirmed).
+    
+    F:
+      range: [0.0, 0.40)
+      interpretation: |
+        Fail. Do not bet.
+        Too many failures or unclear edge.
+        Recommend PASS entirely.
+
+# ============================================================================
+# APPLICATION RULES
+# ============================================================================
+
+application_rules:
+  
+  minimum_thresholds:
+    edge_quality:
+      description: "Edge quality must be verifiable, not speculative"
+      minimum_score: 0.50
+      rationale: "Without statistical edge, all else is noise"
+    
+    pitcher_confirmation:
+      description: "Starting pitchers must be locked"
+      minimum_score: 0.70
+      rationale: "Pitcher changes invalidate entire thesis"
+    
+    market_efficiency:
+      description: "Market must allow execution"
+      minimum_score: 0.50
+      rationale: "Execution risk erodes edge"
+  
+  all_dimensions_required: |
+    Do not skip dimensions. Each requires explicit evaluation.
+    If any dimension is 0.0, recommend PASS unless edge is exceptional.
+  
+  no_soft_signals: |
+    Use only quantified dimensions for grading.
+    Do not add subjective adjustments or "gut feel".
+    Grading is mechanical and transparent.
+
+# ============================================================================
+# INTEGRATION WITH SYSTEM
+# ============================================================================
+
+integration:
+  
+  rsi_model_connection: |
+    RUBRIC_SCORE feeds into RSI calculation.
+    High rubric scores reduce overall RSI (lower risk perception).
+    Low rubric scores increase overall RSI (higher risk perception).
+  
+  exposure_logic_connection: |
+    Rubric scores influence allocation sizing.
+    Grade A bets → allow higher individual allocation
+    Grade D/F bets → recommend lower or zero allocation
+    User retains final decision on sizing.
+  
+  user_autonomy_preserved: |
+    Rubric is informational, never blocking.
+    Low rubric score does NOT prevent execution.
+    All allocation decisions remain with user.
+    System surfaces the grade; user pulls the trigger.
+
+# ============================================================================
+# EXAMPLE CALCULATION
+# ============================================================================
+
+example_bet:
+  matchup: "Houston Astros @ Yankee Stadium"
+  pick: "Over 8.5 runs (Astros Ace vs. Yankee pitcher)"
+  
+  dimension_scores:
+    edge_quality: 0.80
+    pitcher_confirmation: 0.90
+    weather_environmental_risk: 0.85
+    market_efficiency: 0.88
+    volatility: 0.70
+  
+  calculation: |
+    RUBRIC_SCORE = (0.80 × 0.35) + (0.90 × 0.25) + (0.85 × 0.15) + (0.88 × 0.15) + (0.70 × 0.10)
+    RUBRIC_SCORE = 0.28 + 0.225 + 0.1275 + 0.132 + 0.07
+    RUBRIC_SCORE = 0.8245
+  
+  grade: "B" # Range: 0.70-0.85
+  
+  allocation_recommendation: "90% of standard unit (based on B-grade quality)"
