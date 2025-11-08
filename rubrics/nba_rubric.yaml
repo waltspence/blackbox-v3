@@ -1,0 +1,295 @@
+# NBA Rubric - Bet Quality Grading
+# Elite-level scoring system for NBA bet evaluation
+# Integrates with core RSI model and exposure logic
+
+metadata:
+  sport: NBA
+  description: Comprehensive 5-dimension rubric for NBA bet quality assessment
+  version: 2.0
+  last_updated: 2025-11-08
+
+# ============================================================================
+# RUBRIC DIMENSIONS (5 total, weighted)
+# ============================================================================
+
+dimensions:
+  
+  # Dimension 1: Edge Quality (Weight: 0.35)
+  # Measures the statistical significance of identified edge vs. market
+  edge_quality:
+    weight: 0.35
+    description: |
+      Quantifies the depth and reliability of the identified edge.
+      High edge_quality requires objective statistical advantage with
+      multiple confirmation signals and historical performance.
+    scoring:
+      1.0:
+        - Edge verified by 3+ independent methods
+        - Historical WR > 55% on similar conditions
+        - Line movement confirms edge (sharp money flow)
+        - Sample size > 30 historical bets
+      0.85:
+        - Edge verified by 2 independent methods
+        - Historical WR 52-55%
+        - Partial market confirmation
+        - Sample size 20-30
+      0.70:
+        - Edge verified by 1 primary method
+        - Historical WR 50-52%
+        - Limited historical data (10-20)
+      0.50:
+        - Edge identified but single confirmation
+        - Historical WR near 50%
+      0.25:
+        - Weak statistical edge
+        - Minimal historical validation
+      0.0:
+        - No edge identified
+        - OR edge fails verification tests
+
+  # Dimension 2: Lineup Confirmation (Weight: 0.25)
+  # Ensures bet thesis remains valid given current team composition
+  lineup_confirmation:
+    weight: 0.25
+    description: |
+      Validates that the edge thesis holds with current roster.
+      Missing key players can invalidate entire edge framework.
+      Injury data must be current as of game time.
+    scoring:
+      1.0:
+        - All key rotation players available
+        - Status confirmed within 2 hours of tipoff
+        - No late scratches or unexpected absences
+        - Bench depth unaffected
+      0.85:
+        - All starters available
+        - Minor bench players out
+        - Does not affect edge thesis
+      0.70:
+        - Key bench player unavailable
+        - May slightly reduce edge magnitude
+        - Does not invalidate core thesis
+      0.50:
+        - One important rotational player out
+        - Edge thesis weakened but still present
+      0.25:
+        - Multiple key players questionable or out
+        - Edge thesis significantly compromised
+      0.0:
+        - Star player(s) out OR status unknown
+        - Cannot validate edge thesis
+
+  # Dimension 3: Injury Risk (Weight: 0.15)
+  # Measures exposure to in-game player injury affecting outcome
+  injury_risk:
+    weight: 0.15
+    description: |
+      Quantifies risk that injury during game alters expected outcome.
+      High-usage players on teams with no depth create tail risk.
+      Not about pre-game injury status (that's lineup_confirmation).
+      This measures in-game injury volatility.
+    scoring:
+      1.0:
+        - No injury-prone star players
+        - Deep bench for all key positions
+        - Historical injury rate < 2% per game
+      0.85:
+        - One injury-prone player, adequate depth backup
+        - Historical injury rate 2-3%
+      0.70:
+        - One injury-prone star with shallow bench backup
+        - Historical injury rate 3-4%
+      0.50:
+        - Multiple injury-prone rotational players
+        - Moderate depth concerns
+      0.25:
+        - Star player injury-prone with thin backup
+        - Back-to-back games (fatigue risk)
+      0.0:
+        - Star player injury-prone AND thin backup
+        - Known short-term injury concern for star
+
+  # Dimension 4: Market Efficiency (Weight: 0.15)
+  # Assesses liquidity and line movement dynamics for execution
+  market_efficiency:
+    weight: 0.15
+    description: |
+      Measures market depth and line stability.
+      Better efficiency = more reliable odds, less slippage.
+      NBA has high liquidity; this flags exceptions.
+    scoring:
+      1.0:
+        - High volume across all books (> 1M combined)
+        - Line stable within ±0.25 across books
+        - Tight bid-ask spreads
+      0.85:
+        - Good volume (500K-1M)
+        - Line movement ±0.5 across books
+      0.70:
+        - Moderate volume (100K-500K)
+        - Line movement ±1.0
+      0.50:
+        - Lower volume (50K-100K)
+        - Line movement ±1.5
+      0.25:
+        - Thin market (< 50K volume)
+        - Significant line variation
+      0.0:
+        - Minimal liquidity, high slippage risk
+        - Line highly unstable
+
+  # Dimension 5: Volatility (Weight: 0.10)
+  # Measures expected outcome variance and upset potential
+  volatility:
+    weight: 0.10
+    description: |
+      Quantifies expected game variance and upset risk.
+      Higher volatility = harder to predict, more path-dependent.
+      Playoff games, rivalry matchups, desperation situations = higher volatility.
+    scoring:
+      1.0:
+        - Expected MOV > 12 points
+        - Matchup favors stronger team
+        - Neutral context
+      0.85:
+        - Expected MOV 8-12 points
+        - Clear favorite
+      0.70:
+        - Expected MOV 5-8 points
+        - Moderate favorite
+      0.50:
+        - Expected MOV 2-5 points (close game)
+        - Competitive matchup
+      0.25:
+        - Expected MOV < 2 points
+        - High variance potential
+      0.0:
+        - Playoff game OR high-stakes situation
+        - Historical MOV unpredictable
+
+# ============================================================================
+# GRADING SCALE
+# ============================================================================
+
+grading_scale:
+  formula: |
+    RUBRIC_SCORE = (edge_quality × 0.35) +
+                   (lineup_confirmation × 0.25) +
+                   (injury_risk × 0.15) +
+                   (market_efficiency × 0.15) +
+                   (volatility × 0.10)
+  
+  grades:
+    A:
+      range: [0.85, 1.0]
+      interpretation: |
+        Elite-quality bet. All dimensions strong.
+        High confidence in edge, lineup confirmed, manageable risk.
+        These are the target bets for maximum allocation.
+    
+    B:
+      range: [0.70, 0.85)
+      interpretation: |
+        Strong-quality bet. Core thesis solid.
+        One dimension may be slightly weaker (e.g., thin market).
+        Recommend 75-100% of standard allocation.
+    
+    C:
+      range: [0.55, 0.70)
+      interpretation: |
+        Decent-quality bet. Edge present but execution risk moderate.
+        May have lineup or market concerns.
+        Recommend 50-75% of standard allocation.
+    
+    D:
+      range: [0.40, 0.55)
+      interpretation: |
+        Below-average quality. Multiple dimension concerns.
+        Edge may be weak OR execution problematic.
+        Recommend 25-50% of standard allocation (skip if edge weak).
+    
+    F:
+      range: [0.0, 0.40)
+      interpretation: |
+        Fail. Do not bet.
+        Too many dimension failures or unclear edge.
+        Recommend PASS entirely.
+
+# ============================================================================
+# APPLICATION RULES
+# ============================================================================
+
+application_rules:
+  
+  minimum_thresholds:
+    edge_quality:
+      description: "Edge quality must be verifiable, not speculative"
+      minimum_score: 0.50
+      rationale: "Without statistical edge, all else is noise"
+    
+    lineup_confirmation:
+      description: "Lineup must be locked and confirmed"
+      minimum_score: 0.70
+      rationale: "Cannot execute on lineups that may change"
+    
+    market_efficiency:
+      description: "Market must allow execution at reasonable odds"
+      minimum_score: 0.50
+      rationale: "Execution risk erodes edge"
+  
+  all_dimensions_required: |
+    Do not skip dimensions. A single 0.0 score indicates critical failure.
+    If any dimension is 0.0, recommend PASS unless edge is exceptional.
+  
+  no_soft_signals: |
+    Use only the 5 quantified dimensions for grading.
+    Do not add subjective "gut feel" or "vibes" adjustments.
+    Do not penalize bets for emotional reasons (loss streaks, etc.).
+    Grading is mechanical and transparent.
+
+# ============================================================================
+# INTEGRATION WITH SYSTEM
+# ============================================================================
+
+integration:
+  
+  rsi_model_connection: |
+    RUBRIC_SCORE feeds into RSI calculation as one component.
+    High rubric scores reduce overall RSI (lower risk perception).
+    Low rubric scores increase overall RSI (higher risk perception).
+  
+  exposure_logic_connection: |
+    Rubric scores influence allocation sizing in exposure_logic.yaml.
+    Grade A bets → allow higher individual allocation
+    Grade D/F bets → recommend lower or zero allocation
+    User retains final decision on sizing.
+  
+  user_autonomy_preserved: |
+    Rubric is informational, never blocking.
+    Low rubric score does NOT prevent bet execution.
+    All allocation decisions remain with user.
+    System surfaces the grade; user pulls the trigger.
+
+# ============================================================================
+# EXAMPLE CALCULATION
+# ============================================================================
+
+example_bet:
+  matchup: "Boston Celtics vs Miami Heat"
+  pick: "Boston -5.5"
+  
+  dimension_scores:
+    edge_quality: 0.85
+    lineup_confirmation: 0.90
+    injury_risk: 0.75
+    market_efficiency: 0.90
+    volatility: 0.80
+  
+  calculation: |
+    RUBRIC_SCORE = (0.85 × 0.35) + (0.90 × 0.25) + (0.75 × 0.15) + (0.90 × 0.15) + (0.80 × 0.10)
+    RUBRIC_SCORE = 0.2975 + 0.225 + 0.1125 + 0.135 + 0.08
+    RUBRIC_SCORE = 0.8400
+  
+  grade: "A" # Range: 0.85-1.0 but score rounds to high-B or borderline-A
+  
+  allocation_recommendation: "100% of standard unit (based on A-grade quality)"
