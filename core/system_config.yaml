@@ -1,0 +1,91 @@
+# BLACKBOX ALPHA v2.0 - SYSTEM CONFIGURATION
+# This file defines bankroll, unit sizing, exposure limits, and default thresholds
+
+bankroll:
+  total_units: 24
+  unit_size_usd: 50
+  total_usd: 1200
+
+exposure_limits:
+  # Maximum exposure to a single prop
+  single_prop_max_pct: 0.15  # 15% of bankroll
+  # Maximum exposure to a single game
+  single_game_max_pct: 0.25  # 25% of bankroll
+  # Maximum exposure to a single athlete
+  single_athlete_max_pct: 0.20  # 20% of bankroll
+  # Maximum exposure to a single team
+  single_team_max_pct: 0.30  # 30% of bankroll
+  # Maximum correlation penalty before hard stop
+  max_correlation_penalty_rsi: 0.10  # 10% added to RSI
+
+rsi_thresholds:
+  green_max: 0.30     # < 0.30 = Green
+  yellow_max: 0.50    # 0.30-0.50 = Yellow
+  orange_max: 0.70    # 0.50-0.70 = Orange
+  red_min: 0.70       # >= 0.70 = Red
+
+sports:
+  - name: NBA
+    enabled: true
+    rsi_modifier: 1.0
+    props_allowed:
+      - points
+      - rebounds
+      - assists
+      - steals
+      - blocks
+      - makes
+      - overs_unders
+  - name: MLB
+    enabled: true
+    rsi_modifier: 0.95
+    props_allowed:
+      - hits
+      - runs
+      - rbis
+      - home_runs
+      - strikeouts
+  - name: NFL
+    enabled: true
+    rsi_modifier: 1.15
+    props_allowed:
+      - passing_yards
+      - rushing_yards
+      - receiving_yards
+      - touchdowns
+      - interceptions
+  - name: NHL
+    enabled: true
+    rsi_modifier: 1.05
+    props_allowed:
+      - goals
+      - assists
+      - shots
+  - name: Soccer
+    enabled: true
+    rsi_modifier: 1.10
+    props_allowed:
+      - goals
+      - assists
+      - shots
+      - tackles
+
+exposure_tracking:
+  count_by_game: true      # Roll up exposure by game
+  count_by_team: true      # Roll up exposure by team
+  count_by_athlete: true   # Roll up exposure by athlete
+  apply_correlation: true  # Apply correlation penalties
+
+audit_trail:
+  enabled: true
+  log_every_submission: true
+  log_path: "./logs/submissions"
+  retention_days: 365
+
+defaults:
+  # Default exposure as % of bankroll for a new position
+  default_position_size_pct: 0.04  # 4% = ~1 unit
+  # Default to surface exposures, not enforce them
+  hard_limits_enabled: false
+  # All recommendations are suggestions only
+  user_override_allowed: true
