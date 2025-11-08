@@ -1,0 +1,294 @@
+# SOCCER RUBRIC - Sports Betting Quant Scoring Framework
+# Comprehensive dimensional scoring system for soccer/international football bets
+# Part of BLKBX Spaces v2 - Professional Quant System
+
+# ===================================================================
+# DIMENSIONS - 5-Point Evaluation System for Soccer
+# ===================================================================
+
+dimensions:
+  # DIMENSION 1: Match Context & Competition Structure
+  match_context:
+    weight: 0.25
+    range: 0.0 - 1.0
+    description: |
+      Quality of information about competition tier, stage, stakes.
+      Evaluates: league tier, tournament phase, team motivation, relegation battle.
+    scoring_criteria:
+      1.0: |
+        Critical stage match (playoff, championship decider, promotion race final day)
+        Clear motivation disparity (top 6 vs bottom 6, European competition on line)
+        High-stakes outcome (Champions League qualification, promotion/relegation)
+      0.85:
+        Significant competition context (mid-season standings matter)
+        Moderate motivation differences between competitors
+        Standard domestic league match with clear context
+      0.70:
+        Routine league fixture with normal stakes
+        Both teams similar motivation (midtable stability)
+        Early season or mid-competition phase
+      0.50:
+        Weak context (preseason, friendlies, very early cup rounds)
+        Uncertain motivation or team preparation status
+        Limited information on team focus
+      0.0:
+        No meaningful context available
+        Preseason or completely unimportant fixtures
+        Teams with unknown focus or preparation
+
+  # DIMENSION 2: Form & Recent Performance Data
+  form_quality:
+    weight: 0.25
+    range: 0.0 - 1.0
+    description: |
+      Strength and depth of recent performance data.
+      Evaluates: last 10-15 match results, consistency, trajectory.
+    scoring_criteria:
+      1.0: |
+        Clear form trend (5+ recent matches unambiguous direction)
+        Both teams with 10+ recent match data
+        Consistency indicators (GD, xG trends)
+      0.85:
+        Good recent performance data (8+ recent matches)
+        Some consistency visible in results
+        Minor variance in recent form
+      0.70:
+        Adequate form data (5-7 recent matches)
+        Moderate form trend visible
+        Some recent variance
+      0.50:
+        Limited form data (2-4 recent matches)
+        Unclear trend direction
+        Significant recent form volatility
+      0.0:
+        Insufficient recent performance data
+        No clear form trend observable
+        New season or new team composition
+
+  # DIMENSION 3: Head-to-Head & Competitive Balance
+  h2h_competitive_balance:
+    weight: 0.20
+    range: 0.0 - 1.0
+    description: |
+      Historical matchup data and relative team quality.
+      Evaluates: recent H2H trends, power differential, tactical familiarity.
+    scoring_criteria:
+      1.0: |
+        3+ recent H2H matches (last 2 seasons)
+        Clear H2H trend visible
+        Competitive balance within +/- 1 goal expectancy
+      0.85:
+        2 recent H2H matches
+        Some H2H trend data
+        Teams within similar quality band
+      0.70:
+        1-2 H2H in recent past
+        Some historical data
+        Moderate quality differential
+      0.50:
+        Limited H2H data (pre-2023 only)
+        Significant quality gap possible
+        Tactical unfamiliarity
+      0.0:
+        First matchup or no recent data
+        Extreme quality differential
+        No comparison points
+
+  # DIMENSION 4: Injury/Suspension & Squad Impact
+  squad_integrity:
+    weight: 0.20
+    range: 0.0 - 1.0
+    description: |
+      Availability of key players and squad composition impacts.
+      Evaluates: star player injuries, suspensions, squad depth.
+    scoring_criteria:
+      1.0: |
+        Full squad available (no key injuries/suspensions)
+        Normal team composition
+        All starting XI likely available
+      0.85:
+        Minor absences (reserve player out)
+        Squad depth available
+        Minimal tactical adjustment needed
+      0.70:
+        One key player questionable/suspended
+        Squad can absorb absence
+        Some tactical adjustment possible
+      0.50:
+        Multiple key absences or one star player out
+        Squad depth tested
+        Significant tactical changes required
+      0.25:
+        Major player(s) unavailable (striker, goalkeeper, leader)
+        Squad significantly compromised
+        Substantial lineup changes
+      0.0:
+        Multiple star players out
+        Squad heavily compromised
+        Unresolved late team news
+
+  # DIMENSION 5: Market & Pricing Efficiency
+  market_efficiency:
+    weight: 0.10
+    range: 0.0 - 1.0
+    description: |
+      Bet pricing relationship to stated probabilities.
+      Evaluates: line movement, public/sharp action, value identification.
+    scoring_criteria:
+      1.0: |
+        Opening line favorable vs expected outcome
+        Sharp action visible (limit moves against public)
+        Clear value or mispricing identified
+      0.85:
+        Line reasonable, minor value visible
+        Normal market action
+        Slight edge detected
+      0.70:
+        Line appears fair
+        Normal market pricing
+        Minimal obvious value
+      0.50:
+        Line soft or moving unfavorably
+        Public heavy action
+        Pricing worse than baseline
+      0.0:
+        Line clearly unfavorable
+        Heavy public money
+        No value identifiable
+
+# ===================================================================
+# GRADING SCALE - Convert Score to Recommendation
+# ===================================================================
+
+grading_scale:
+  A: &grade_A
+    range: "0.85 - 1.0"
+    interpretation: |
+      ELITE BET
+      Execute full allocation. All dimensions aligned. 
+      Match context is clear, teams have good data, competitive balance understood,
+      squad intact, and pricing offers value.
+  B: &grade_B
+    range: "0.70 - 0.84"
+    interpretation: |
+      STRONG BET
+      Execute standard allocation. Most dimensions favorable.
+      Good data quality and context, some minor concerns manageable.
+  C: &grade_C
+    range: "0.55 - 0.69"
+    interpretation: |
+      MODERATE BET
+      Execute reduced allocation. Mixed dimension quality.
+      Some concerns present but not disqualifying. Additional due diligence suggested.
+  D: &grade_D
+    range: "0.40 - 0.54"
+    interpretation: |
+      WEAK BET
+      Consider pass or minimal allocation. Significant dimension concerns.
+      Data quality or context issues present. Not recommended unless special edge identified.
+  F: &grade_F
+    range: "0.00 - 0.39"
+    interpretation: |
+      PASS
+      Do not bet. Multiple dimension failures or insufficient information.
+      Insufficient data quality to make informed allocation decision.
+
+# ===================================================================
+# APPLICATION RULES
+# ===================================================================
+
+application_rules:
+  core_rule: |
+    1. Score each dimension independently 0.0-1.0 based on criteria
+    2. Apply weights to each dimension score
+    3. Sum weighted scores for RUBRIC_SCORE
+    4. Match RUBRIC_SCORE to grading scale
+    5. Allocation recommendation follows grade tier
+    6. Surface all supporting data to user (dimensions, scores, grade)
+  
+  tie_breaker: |
+    When score falls exactly on scale boundary (0.70, 0.85):
+    - Favor the LOWER grade (more conservative)
+    - Document boundary decision in scoring notes
+    - Example: 0.70 score → Grade C (not B)
+
+  data_quality_check: |
+    INTEGRITY VERIFICATION (non-blocking, informational):
+    - Confirm team sheets/lineups announced or available
+    - Verify injury status from official sources
+    - Check venue/competition from authoritative source
+    - Surface any unverified data in scoring notes
+    
+    Note: Data verification is for QUALITY ONLY, never for blocking.
+    If data verified successfully, include confirmation in output.
+    If data cannot be verified, document as "UNVERIFIED" and include in rubric anyway.
+    All allocation decisions remain with user.
+
+# ===================================================================
+# INTEGRATION NOTES
+# ===================================================================
+
+integration:
+  system_config_reference: |
+    Uses RSI_MODEL.soccer_multiplier (default: 0.95)
+    Incorporates EXPOSURE_LOGIC for allocation sizing
+  
+  input_requirements:
+    - match_identifier: "Team A vs Team B, League/Competition, Date"
+    - recent_match_data: "Last 10-15 results for both teams"
+    - h2h_history: "Recent H2H if available (3+ year window)"
+    - squad_status: "Confirmed injuries, suspensions, lineup questions"
+    - market_snapshot: "Opening line, current line, sharp action indicators"
+  
+  output_format:
+    - dimension_scores: "Dictionary of each dimension: 0.0-1.0"
+    - rubric_score: "Weighted sum (0.0-1.0)"
+    - grade: "A/B/C/D/F"
+    - allocation_recommendation: "Standard/Reduced/Minimal/Pass per grade"
+    - supporting_analysis: "Key data driving each dimension score"
+    - unverified_flags: "Any data quality concerns or gaps"
+
+# ===================================================================
+# EXAMPLE CALCULATION
+# ===================================================================
+
+example_bet:
+  matchup: "Liverpool vs Manchester City, Premier League, Matchday 18"
+  pick: "Manchester City -0.5 (Asian Handicap)"
+  
+  dimension_scores:
+    match_context: 0.90
+      # Top 6 battle for title, high-stakes rivalry, standard competition structure
+    form_quality: 0.85
+      # Both teams 12+ recent matches, clear form visible
+    h2h_competitive_balance: 0.88
+      # 5 recent H2H matches, competitive balance, tactical familiarity
+    squad_integrity: 0.75
+      # One key midfielder questionable for Liverpool (squad depth available)
+    market_efficiency: 0.80
+      # Opening -0.5 moved to -0.75 (sharp action), value not obvious but reasonable
+  
+  calculation: |
+    RUBRIC_SCORE = (0.90 × 0.25) + (0.85 × 0.25) + (0.88 × 0.20) + (0.75 × 0.20) + (0.80 × 0.10)
+    RUBRIC_SCORE = 0.225 + 0.2125 + 0.176 + 0.15 + 0.08
+    RUBRIC_SCORE = 0.844
+  
+  grade: "B" # Range 0.70-0.84 → Grade B (Strong Bet)
+  
+  allocation_recommendation: |
+    Standard allocation (100% of unit) based on B-grade quality.
+    All major dimensions favorable. Squad question manageable given depth.
+    High-stakes match with quality data. Execute bet.
+  
+  data_verification_notes: |
+    ✓ Official lineup expected 1 hour pre-match (standard)
+    ✓ Squad status from official team sources
+    ✓ Competition tier verified: Premier League
+    ? One player status TBD - will update pre-match
+    
+    All data verified or will be available before execution.
+    Proceed with confidence.
+
+# ===================================================================
+# END SOCCER RUBRIC
+# ===================================================================
