@@ -1,0 +1,284 @@
+# NHL Rubric - Bet Quality Grading
+# Specialized rubric for National Hockey League betting
+# Accounts for sport-specific factors: goalie health, back-to-backs, rest/travel
+
+metadata:
+  sport: NHL
+  description: Comprehensive 5-dimension rubric for NHL bet quality assessment
+  version: 2.0
+  last_updated: 2025-11-08
+
+# ============================================================================
+# RUBRIC DIMENSIONS (5 total, weighted)
+# ============================================================================
+
+dimensions:
+  
+  # Dimension 1: Edge Quality (Weight: 0.35)
+  # Measures statistical significance of identified edge vs. market
+  edge_quality:
+    weight: 0.35
+    description: |
+      Quantifies the depth and reliability of the identified edge.
+      For NHL, must account for team trends, goalie matchups, and situational factors.
+      High variance sport; small sample sizes (82 games) require careful validation.
+    scoring:
+      1.0:
+        - Edge verified by 3+ independent methods (trends, matchup, Vegas movement)
+        - Historical WR > 55% across 50+ similar situations
+        - Multiple data sources confirm edge
+      0.85:
+        - Edge verified by 2 independent methods
+        - Historical WR 52-55% across 30-50 similar situations
+        - Partial confirmation across sources
+      0.70:
+        - Edge verified by 1 primary method (e.g., trend advantage)
+        - Historical WR 50-52% across 20-30 situations
+        - Limited data but statistically meaningful
+      0.50:
+        - Edge identified but limited verification
+        - Historical WR near 50% or very small sample
+      0.25:
+        - Weak statistical edge
+        - Minimal validation data
+      0.0:
+        - No edge identified
+        - OR edge fails verification tests
+
+  # Dimension 2: Goalie Impact (Weight: 0.25)
+  # NHL-specific: starting goalie dramatically affects outcome
+  goalie_impact:
+    weight: 0.25
+    description: |
+      Measures starting goalie quality and backup availability.
+      Elite goalies (> .920 SV%) dramatically improve chances.
+      Backup goalie vs. starter is a massive matchup factor.
+    scoring:
+      1.0:
+        - Elite starter confirmed (.920+ SV%, Vezina-caliber)
+        - Confirmed 24+ hours before game
+        - Deep backup if starter injured
+      0.85:
+        - Good starter confirmed (.915-.920 SV%)
+        - Confirmed 24+ hours before game
+      0.70:
+        - Average starter confirmed (.910-.915 SV%)
+        - Confirmed < 24 hours or last-minute uncertainty
+      0.50:
+        - Below-average starter confirmed
+        - OR uncertain if backup will play
+      0.25:
+        - Backup goalie likely or starter's health questionable
+        - Unknown starter creates thesis uncertainty
+      0.0:
+        - Starting goalie unknown or major injury concern
+        - Cannot project matchup reliably
+
+  # Dimension 3: Back-to-Back & Rest (Weight: 0.15)
+  # NHL-specific: back-to-backs create huge variance (especially for goalies)
+  back_to_back_rest:
+    weight: 0.15
+    description: |
+      Measures rest advantages and back-to-back disadvantages.
+      Second night of back-to-back significantly reduces team performance.
+      Travel considerations (Pacific vs. Eastern divisions) matter.
+    scoring:
+      1.0:
+        - Both teams have equal rest (2+ days)
+        - No back-to-back scheduling issues
+        - Comparable travel (same region)
+      0.85:
+        - One team has slight rest advantage (1-2 days)
+        - No back-to-back issues
+      0.70:
+        - One team on back-to-back (SECOND game)
+        - Underdog/favored team slightly disadvantaged
+      0.50:
+        - Favored team on back-to-back (second game)
+        - Pick subject to rest disadvantage
+      0.25:
+        - Back-to-back with cross-continent travel
+        - Expected fatigue significant
+      0.0:
+        - Extreme back-to-back situation (3rd game in 4 nights)
+        - Outcome highly unpredictable due to fatigue
+
+  # Dimension 4: Market Efficiency (Weight: 0.15)
+  # Assesses liquidity and line movement dynamics for execution
+  market_efficiency:
+    weight: 0.15
+    description: |
+      Measures market depth and line stability.
+      Better efficiency = more reliable odds, less slippage.
+      NHL markets are generally liquid but less so than NFL/NBA.
+    scoring:
+      1.0:
+        - High volume across major books (> 750K combined)
+        - Line stable within ±0.25 across books
+        - Tight bid-ask spreads
+      0.85:
+        - Good volume (400K-750K)
+        - Line movement ±0.5 across books
+      0.70:
+        - Moderate volume (200K-400K)
+        - Line movement ±0.75
+      0.50:
+        - Lower volume (100K-200K)
+        - Line movement ±1.0
+      0.25:
+        - Thin market (< 100K volume)
+        - Significant line movement or sharp activity
+      0.0:
+        - Minimal liquidity, execution risk
+        - Line highly unstable
+
+  # Dimension 5: Volatility & Context (Weight: 0.10)
+  # NHL-specific: playoff games, rivalry games, home ice advantages
+  volatility_context:
+    weight: 0.10
+    description: |
+      Quantifies expected outcome variance and unpredictability.
+      Regular season games are more predictable than playoff scenarios.
+      Division rivalries and home ice advantage increase variance.
+    scoring:
+      1.0:
+        - Early-mid season game
+        - Non-rival matchup
+        - Neutral motivation
+      0.85:
+        - Regular season with slight motivation
+        - Defined roles
+      0.70:
+        - Late-season game (with playoff implications)
+        - Possible rivalry (increased variance)
+      0.50:
+        - Division rival game
+        - Higher motivation for underdog
+      0.25:
+        - Playoff game or high-stakes matchup
+        - Extreme variance potential
+      0.0:
+        - Finals or elimination game
+        - Outcome highly unpredictable
+
+# ============================================================================
+# GRADING SCALE
+# ============================================================================
+
+grading_scale:
+  formula: |
+    RUBRIC_SCORE = (edge_quality × 0.35) +
+                   (goalie_impact × 0.25) +
+                   (back_to_back_rest × 0.15) +
+                   (market_efficiency × 0.15) +
+                   (volatility_context × 0.10)
+  
+  grades:
+    A:
+      range: [0.85, 1.0]
+      interpretation: |
+        Elite-quality bet. Elite goalie confirmed, good rest, strong edge.
+        These are target bets for maximum allocation.
+    
+    B:
+      range: [0.70, 0.85)
+      interpretation: |
+        Strong-quality bet. Core edge solid, reasonable goalie/rest profile.
+        Recommend 75-100% of standard allocation.
+    
+    C:
+      range: [0.55, 0.70)
+      interpretation: |
+        Decent-quality bet. Edge present but goalie or rest concerns.
+        Recommend 50-75% of standard allocation.
+    
+    D:
+      range: [0.40, 0.55)
+      interpretation: |
+        Below-average quality. Multiple concerns (goalie, back-to-back, volatility).
+        Recommend 25-50% of standard allocation (skip if uncertain goalie).
+    
+    F:
+      range: [0.0, 0.40)
+      interpretation: |
+        Fail. Do not bet.
+        Too many failures or unknown goalie.
+        Recommend PASS entirely.
+
+# ============================================================================
+# APPLICATION RULES
+# ============================================================================
+
+application_rules:
+  
+  minimum_thresholds:
+    edge_quality:
+      description: "Edge quality must be verifiable, not speculative"
+      minimum_score: 0.50
+      rationale: "Without statistical edge, all else is noise"
+    
+    goalie_impact:
+      description: "Starting goalie must be confirmed"
+      minimum_score: 0.70
+      rationale: "Unknown or backup goalie invalidates thesis"
+    
+    market_efficiency:
+      description: "Market must allow execution"
+      minimum_score: 0.50
+      rationale: "Execution risk erodes edge"
+  
+  all_dimensions_required: |
+    Do not skip dimensions. Each requires explicit evaluation.
+    If any dimension is 0.0, recommend PASS unless edge is exceptional.
+  
+  no_soft_signals: |
+    Use only quantified dimensions for grading.
+    Do not add subjective adjustments or "gut feel".
+    Grading is mechanical and transparent.
+
+# ============================================================================
+# INTEGRATION WITH SYSTEM
+# ============================================================================
+
+integration:
+  
+  rsi_model_connection: |
+    RUBRIC_SCORE feeds into RSI calculation.
+    High rubric scores reduce overall RSI (lower risk perception).
+    Low rubric scores increase overall RSI (higher risk perception).
+  
+  exposure_logic_connection: |
+    Rubric scores influence allocation sizing.
+    Grade A bets → allow higher individual allocation
+    Grade D/F bets → recommend lower or zero allocation
+    User retains final decision on sizing.
+  
+  user_autonomy_preserved: |
+    Rubric is informational, never blocking.
+    Low rubric score does NOT prevent execution.
+    All allocation decisions remain with user.
+    System surfaces the grade; user pulls the trigger.
+
+# ============================================================================
+# EXAMPLE CALCULATION
+# ============================================================================
+
+example_bet:
+  matchup: "Colorado Avalanche vs Vegas Golden Knights"
+  pick: "Colorado -1.5"
+  
+  dimension_scores:
+    edge_quality: 0.85
+    goalie_impact: 0.92
+    back_to_back_rest: 0.78
+    market_efficiency: 0.85
+    volatility_context: 0.75
+  
+  calculation: |
+    RUBRIC_SCORE = (0.85 × 0.35) + (0.92 × 0.25) + (0.78 × 0.15) + (0.85 × 0.15) + (0.75 × 0.10)
+    RUBRIC_SCORE = 0.2975 + 0.23 + 0.117 + 0.1275 + 0.075
+    RUBRIC_SCORE = 0.847
+  
+  grade: "A" # Range: 0.85-1.0
+  
+  allocation_recommendation: "100% of standard unit (based on A-grade quality with elite goalie)"
