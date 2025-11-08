@@ -1,0 +1,117 @@
+# BLACKBOX ALPHA v2.0 - RSI MODEL CONFIGURATION
+# Risk Scoring Index formula, Bayesian priors, and sport-specific settings
+
+rsi_formula:
+  description: "RSI = [(Line_Risk × 0.35) + (Variance × 0.25) + (Exposure_Weight × 0.20) + (Correlation_Penalty × 0.15) + (Volatility_Flag × 0.05)] × Sport_Modifier"
+  weights:
+    line_risk: 0.35
+    variance: 0.25
+    exposure_weight: 0.20
+    correlation_penalty: 0.15
+    volatility_flag: 0.05
+
+# Bayesian Priors by Sport
+bayesian_priors:
+  NBA:
+    line_risk_mean: 0.35
+    line_risk_std: 0.12
+    variance_mean: 0.22
+    variance_std: 0.10
+    sharp_money_weight: 0.18
+  MLB:
+    line_risk_mean: 0.30
+    line_risk_std: 0.08
+    variance_mean: 0.18
+    variance_std: 0.08
+    sharp_money_weight: 0.25
+  NFL:
+    line_risk_mean: 0.40
+    line_risk_std: 0.15
+    variance_mean: 0.28
+    variance_std: 0.12
+    sharp_money_weight: 0.15
+  NHL:
+    line_risk_mean: 0.35
+    line_risk_std: 0.13
+    variance_mean: 0.24
+    variance_std: 0.11
+    sharp_money_weight: 0.16
+  Soccer:
+    line_risk_mean: 0.38
+    line_risk_std: 0.14
+    variance_mean: 0.26
+    variance_std: 0.12
+    sharp_money_weight: 0.14
+
+# Component Calculations
+line_risk_factors:
+  closing_line_value:
+    threshold: 0.05  # 5% CLV movement
+    penalty_per_1pct: 0.02
+  sharp_money_overlay:
+    first_hour_multiplier: 1.5
+    two_to_three_hour_multiplier: 1.2
+    after_three_hours: 1.0
+  market_consensus:
+    vs_consensus_threshold: 0.03  # 3% against consensus
+    penalty: 0.08
+
+variance_factors:
+  injury_volatility:
+    questionable_status: 0.08
+    probable_status: 0.05
+    out_status: 0.12
+    day_to_day: 0.10
+  roster_uncertainty:
+    late_lineup_announcement: 0.10  # Within 2 hours of tipoff
+    unexpected_dnp: 0.12
+    last_minute_trade: 0.15
+  game_context:
+    back_to_back: 0.06
+    travel_day: 0.05
+    extreme_weather: 0.08
+
+exposure_weight_scale:
+  none: 0.0
+  light: 0.05       # < 5% portfolio exposure
+  moderate: 0.15    # 5-10% portfolio exposure
+  heavy: 0.30       # 10-20% portfolio exposure
+  extreme: 0.50     # > 20% portfolio exposure
+
+correlation_scaling:
+  # Correlation × Existing_Exposure_Pct = Penalty
+  low_correlation: 0.3
+  moderate_correlation: 0.6
+  high_correlation: 0.9
+  perfect_correlation: 1.0
+
+volatility_flags:
+  enabled: true
+  spike_amount: 0.05  # +5% RSI if triggered
+  triggers:
+    - late_lineup_changes
+    - unusual_line_movement
+    - market_gaps
+    - injury_developments
+
+sport_modifiers:
+  NBA: 1.0
+  MLB: 0.95
+  NFL: 1.15
+  NHL: 1.05
+  Soccer: 1.10
+
+# Thresholds & Signal Mapping
+rsi_thresholds:
+  signals:
+    green: 0.30
+    yellow: 0.50
+    orange: 0.70
+    red: 1.00
+
+# Regime Switching (Optional - for advanced use)
+regime_switching:
+  enabled: false
+  volatility_threshold: 0.40
+  high_volatility_multiplier: 1.2
+  low_volatility_multiplier: 0.9
