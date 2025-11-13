@@ -1,0 +1,35 @@
+- club: Bayern Munich
+  league: Bundesliga
+  manager: {name: Vincent Kompany, start_date: 2024-06-01, tenure_days: 530}
+  tier1:
+    league_position: 1
+    last5_results: WWWDL
+    key_injuries: [{player: Jamal Musiala, status: questionable}]
+  tier2:
+    tactical_system: "3-2-4-1"
+    style: {press_intensity: 0.65, tempo: 0.58, possession_bias: 0.62, rotation_rate: 0.45, subs_aggressiveness: 0.55}
+    home_away_splits: {gf_ga_delta: 0.42, points_pct_delta: 0.12}
+    xg_trend_6: {for_slope: 0.08, against_slope: -0.02}
+  bcfi:
+    score: 0.61
+    label: Trap Watch
+    actions: {forbid_anchor: true, prefer_undercurrent: false}
+  meta: {updated_at_utc: 2025-11-12T14:00:00Z, source: hybrid}
+
+- club: Real Madrid
+  league: LaLiga
+  manager: {name: Carlo Ancelotti, start_date: 2021-06-01, tenure_days: 1625}
+  tier1:
+    league_position: 2
+    last5_results: WDDWW
+    key_injuries: [{player: Jude Bellingham, status: probable}]
+  tier2:
+    tactical_system: "4-3-1-2"
+    style: {press_intensity: 0.45, tempo: 0.48, possession_bias: 0.60, rotation_rate: 0.40, subs_aggressiveness: 0.40}
+    home_away_splits: {gf_ga_delta: 0.28, points_pct_delta: 0.06}
+    xg_trend_6: {for_slope: 0.03, against_slope: -0.01}
+  bcfi:
+    score: 0.59
+    label: Trap Watch
+    actions: {forbid_anchor: true, prefer_undercurrent: true}
+  meta: {updated_at_utc: 2025-11-12T14:00:00Z, source: hybrid}

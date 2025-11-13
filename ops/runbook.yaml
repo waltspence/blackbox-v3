@@ -1,0 +1,17 @@
+name: MIL_LUP_Runbook
+version: v1
+schedule:
+  primary: Monday 09:00 ET
+  secondary: Friday 09:00 ET
+qa_checklist:
+  - Managers verified (Top‑5 + UCL contenders)
+  - Tenure recomputed
+  - L5 results aligned to fixtures
+  - Key injuries cross‑checked
+  - Style scales normalized 0..1
+  - H/A splits refreshed
+  - xG trend slopes updated
+  - BCFI recomputed; No‑Anchor list refreshed
+publish:
+  artifact: templates/mil_update_batch.yaml
+  changelog: templates/mil_changelog.yaml

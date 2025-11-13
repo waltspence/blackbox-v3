@@ -1,0 +1,31 @@
+name: MIL_LiveUpdate_Protocol
+version: v1
+schedule:
+  primary: "RRULE:FREQ=WEEKLY;BYDAY=MO;BYHOUR=9;BYMINUTE=0;BYSECOND=0;TZID=America/New_York"
+  secondary: "RRULE:FREQ=WEEKLY;BYDAY=FR;BYHOUR=9;BYMINUTE=0;BYSECOND=0;TZID=America/New_York"
+data_source:
+  mode: Hybrid
+  manual_input: true
+  validation_required: true
+  api_integration:
+    enabled: false
+    path_stub: "providers/optalist|fbref|club_feeds (future)"
+output_format: YAML
+scope:
+  tier1: [manager_name, start_date, tenure_days, league_position, last5_results, key_injuries]
+  tier2: [tactical_system, press_intensity, tempo, possession_bias, rotation_rate, subs_aggressiveness, home_away_splits, xg_trend_6]
+bcfi_integration:
+  weights_ref: "schemas/bcfi_weights_v0_2.yaml"
+  recompute_on_commit: true
+  emit_fields: [bcfi_score, bcfi_label, actions]
+workflow:
+  steps:
+    - ingest
+    - validate
+    - normalize
+    - compute_bcfi
+    - write_records
+    - changelog
+    - publish
+logging:
+  fields: [club, manager_name, updated_at_utc, source, validator_status, bcfi_score]

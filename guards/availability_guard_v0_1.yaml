@@ -1,0 +1,25 @@
+name: AvailabilityGuard
+version: v0.1
+category: guard
+description: >
+  Ensures props are only considered if starters/rotation players are confirmed available.
+
+inputs:
+  lineup_confirmed: bool
+  injury_list: [ {player: string, status: [out, doubtful, questionable, probable]} ]
+  minutes_cap: {type: int, optional: true}
+
+rules:
+  - if lineup_confirmed == false:
+      action: {flag: "UNCONFIRMED_LINEUP", severity: high}
+  - if any(injury_list.status in [out, doubtful] for key_players):
+      action: {remove_related_props: true}
+  - if minutes_cap provided and minutes_cap < 30:
+      action: {downgrade_props: true}
+
+outputs:
+  permit: bool
+  reasons: [string]
+
+notes:
+  - Integrate with MIL and BCFI prior to SlipForge selection.

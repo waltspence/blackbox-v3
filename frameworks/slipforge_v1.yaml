@@ -1,0 +1,49 @@
+name: SlipForge
+version: v1
+category: framework
+description: >
+  Composes optimized slips from candidate legs using edge, variance, and covariance rules.
+  Targets payout corridors (e.g., +150 to +200 for Upper Ninety) while enforcing anchor/no-anchor policies.
+
+inputs:
+  candidates:
+    desc: List of candidate legs with model properties
+    schema:
+      - id: string
+        start_time: datetime
+        p_model: float
+        edge_pct: float
+        variance: {type: string, enum: [low, medium, high]}
+        covariance: {type: object, desc: "Optional pairwise correlations", optional: true}
+        type: {type: string, enum: [ml, total, prop, corner, shots]}
+        tags: [string]
+  constraints:
+    max_legs: {type: int, default: 5}
+    payout_corridor: {type: string, enum: ["+120..+220", "+150..+200"], default: "+150..+200"}
+    allow_squeeze: {type: bool, default: true}
+    start_time_cluster_minutes: {type: int, default: 40}
+    ban_overlap_types: {type: [string], default: ["same_player_multi_props"]}
+    no_anchor_policy_ref: {type: string, default: "guards/no_anchor_policy_v1.yaml"}
+
+algorithm:
+  steps:
+    - Filter out banned legs by policy (injury/lineup guards, no-anchor clubs).
+    - Score each leg: score = edge_pct - penalty(variance) - penalty(correlation).
+    - Select 2–3 anchors: top score with variance ∈ {low, medium}, not violating policies.
+    - Optionally add 1 squeeze leg (higher variance, smaller edge) if payout corridor under target.
+    - Enforce start-time clustering and no-duplicate-leg rules.
+    - Compute parlay probability:
+        p_parlay ≈ Π p_i × (1 - k * avg_pairwise_corr),  k in [0.1..0.3] heuristic
+    - Convert to payout and EV; iterate greedily to fit corridor.
+
+outputs:
+  slips:
+    - legs: [id]
+      payout_estimate: string
+      p_win_estimate: float
+      EV_estimate: float
+      notes: [string]
+
+notes:
+  - For strict covariance, supply a matrix; otherwise use heuristic penalty.
+  - Anchor legs must pass no-anchor policy and guards.

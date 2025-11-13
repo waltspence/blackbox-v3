@@ -1,0 +1,55 @@
+name: Goalscape
+version: v0.1
+category: rubric
+sport: soccer
+description: >
+  Projects goal-band probabilities and volatility using team attack/defense quality,
+  pace, manager style, and suppression/fade signals (BCFI).
+
+inputs:
+  xg_for: float
+  xg_against: float
+  shots_for_per90: float
+  shots_against_per90: float
+  sot_for_per90: float
+  conversion_ratio: {type: float, desc: "Goals/xG, regression toward 1.0"}
+  pace: {type: float, desc: "0 slow — 1 fast"}
+  manager_aggression: {type: float, desc: "From MIL 0 conservative — 1 aggressive"}
+  field_tilt_avg: float
+  bcfi: float
+  control_clash: bool
+
+weights:
+  FTA: 0.20
+  xg_for_adj: 0.20
+  xg_against_adj: 0.15
+  conversion_reg: 0.10
+  pace: 0.10
+  manager_aggression: 0.10
+  bcfi_inverse: 0.10   # more fade ⇒ fewer goals
+  finishing_volatility: 0.05
+
+compute:
+  steps:
+    - Adjusted attack = xg_for * (0.7 + 0.3 * conversion_ratio)
+    - Adjusted defense = xg_against
+    - Base_total_lambda = Adjusted attack + (opponent Adjusted attack) / 2   # supply both teams per match
+    - Tempo_mod:
+        if control_clash: lambda_adj = -0.30 else: lambda_adj = 0.0
+        if pace > 0.7 and manager_aggression > 0.6: lambda_adj += 0.20
+    - BCFI_mod = -0.20 * bcfi   # suppress totals when big-club fade risk increases
+    - Lambda_total = max(0.6, Base_total_lambda + lambda_adj + BCFI_mod)
+    - Poisson goals:
+        P_over_2_5 from Poisson(Lambda_total)
+        P_over_3_5 likewise
+  outputs:
+    lambda_total: float
+    band_probs:
+      under_2_5: float
+      over_2_5: float
+      over_3_5: float
+    volatility: {type: string, enum: [low, medium, high]}
+
+notes:
+  - Use team-vs-team inputs; compute both sides before producing match outputs.
+  - Align lambda modifiers with SPX defaults (−0.30 control-control, +0.40 double-tilt).

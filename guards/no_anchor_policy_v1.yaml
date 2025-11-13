@@ -1,0 +1,28 @@
+name: NoAnchorPolicy
+version: v1
+category: guard
+description: >
+  Mechanical rules that forbid using a team as a parlay anchor under defined risk conditions.
+
+rules:
+  - name: EliteAwayFade
+    condition: bcfi >= 0.58 AND venue == "away"
+    action: {forbid_anchor: true}
+  - name: EliteHomeFade
+    condition: bcfi >= 0.60 AND venue == "home"
+    action: {forbid_anchor: true}
+  - name: SterileControl
+    condition: spx.volatility == "low" AND spx.control_clash == true
+    action: {ban_markets: ["alt_over_ladders"]}
+  - name: DeepBlockTrap
+    condition: opponent.profile == "deep_block" AND motivation == "low"
+    action: {forbid_anchor: true}
+
+allowed_when_forbidden:
+  - corners_under
+  - opponent_corners_over
+  - shots_unders
+  - player_under_props
+
+notes:
+  - BCFI thresholds must be versioned; current values tuned from v0.1 -> v0.2 proposal.

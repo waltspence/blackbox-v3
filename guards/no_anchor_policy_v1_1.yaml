@@ -1,0 +1,28 @@
+name: NoAnchorPolicy
+version: v1.1
+category: guard
+description: >
+  Forbids anchor usage based on BCFI v0.2 and SPX context. Supersedes v1.
+
+rules:
+  - name: EliteAwayFade
+    condition: "bcfi >= 0.58 and venue == 'away'"
+    action: {forbid_anchor: true}
+  - name: EliteHomeFade
+    condition: "bcfi >= 0.60 and venue == 'home'"
+    action: {forbid_anchor: true}
+  - name: SterileControl
+    condition: "spx.volatility == 'low' and spx.control_clash == true"
+    action: {ban_markets: ['alt_over_ladders']}
+  - name: DeepBlockTrap
+    condition: "opponent.profile == 'deep_block' and motivation == 'low'"
+    action: {forbid_anchor: true}
+
+allowed_when_forbidden:
+  - corners_under
+  - opponent_corners_over
+  - shots_unders
+  - player_under_props
+
+logging:
+  emit_fields: [match_id, bcfi, venue, rule_triggered, timestamp]

@@ -1,0 +1,73 @@
+name: FairLine
+version: v1
+category: engine
+description: >
+  Converts model probabilities into fair odds, compares against sportsbook odds (vigless), and outputs edge, EV, and pricing tags.
+
+inputs:
+  p_model: {type: float, range: [0.01, 0.99], desc: "Model probability of event"}
+  book_odds:
+    type: object
+    fields:
+      american: {type: number, optional: true}
+      decimal: {type: number, optional: true}
+  counterpart_odds:
+    type: object
+    optional: true
+    fields:
+      american: {type: number, optional: true}
+      decimal: {type: number, optional: true}
+  default_vig: {type: float, default: 0.045, desc: "Applied only if counterpart odds missing"}
+  stake: {type: float, default: 100.0}
+  side: {type: string, enum: [over, under, yes, no, home, away], optional: true}
+
+compute:
+  steps:
+    - name: implied_from_book
+      desc: Convert book odds to implied probability (raw, with vig).
+      formula: |
+        if american present:
+          p_raw = (abs(A) / (abs(A) + 100)) if A > 0 else (100 / (abs(A) + 100))
+        elif decimal present:
+          p_raw = 1.0 / decimal
+    - name: implied_counterpart
+      desc: Convert counterpart odds if provided.
+    - name: remove_vig
+      desc: Normalize using counterpart if present else apply default_vig.
+      formula: |
+        if counterpart provided:
+          norm = p_raw + p_counter_raw
+          p_vigless = p_raw / norm
+        else:
+          p_vigless = max(0.01, min(0.99, p_raw * (1 - default_vig)))
+    - name: fair_odds_from_model
+      formula: |
+        fair_decimal = 1.0 / p_model
+        fair_american = +100 * (fair_decimal - 1) if fair_decimal >= 2.0 else -100 / (fair_decimal - 1)
+    - name: price_edge
+      formula: |
+        edge_pct = p_model - p_vigless
+    - name: ev_calc
+      desc: Compute EV for given stake at book odds.
+      formula: |
+        # payout for american odds
+        if american present:
+          payout = stake * (A/100) if A > 0 else stake * (100/abs(A))
+        elif decimal present:
+          payout = stake * (decimal - 1)
+        EV = p_model * payout - (1 - p_model) * stake
+
+outputs:
+  fair_decimal: float
+  fair_american: float
+  p_book_vigless: float
+  edge_pct: float
+  EV: float
+  tags:
+    - Underpriced: edge_pct >= 0.05
+    - Fair: abs(edge_pct) < 0.02
+    - Overpriced: edge_pct <= -0.03
+
+notes:
+  - Provide counterpart odds whenever possible for proper vig removal.
+  - For parlays, use SlipForge to aggregate EV with covariance penalties.

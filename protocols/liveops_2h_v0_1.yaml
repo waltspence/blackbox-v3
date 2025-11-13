@@ -1,0 +1,35 @@
+name: LiveOps_2H
+version: v0.1
+category: protocol
+sport: soccer
+description: >
+  Mid-game reaction tree for volatility shifts. Converts triggers into actionable second-half bets.
+
+triggers:
+  - name: EarlyGoal
+    when: minute <= 15
+    action:
+      - if pre_match volatility != high: upgrade to high
+      - lean: Over next band; corners over if FTA high
+  - name: RedCard
+    params: {team: [favorite, underdog]}
+    action:
+      - if favorite gets red: Under lean (sterile control), Opp corners up
+      - if underdog gets red: Over lean (tilt), favorite team total over
+  - name: HighPressureNoGoal
+    params: {xg_diff_1h: ">=0.8", shots_diff: ">=6"}
+    action:
+      - Lean Over 0.5 2H; target late corners if block persists
+  - name: KeeperInjuryOrSub
+    action:
+      - Increase Over probability by +0.10 for 20 minutes
+
+guards:
+  - Do not ladder alt-overs if SPX volatility = low AND BCFI >= threshold
+  - Respect No-Anchor policy even in-play
+
+outputs:
+  recommendation:
+    market: [total, team_total, corners, shots]
+    band: string
+    confidence: [low, medium, high]

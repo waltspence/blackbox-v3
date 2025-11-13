@@ -1,0 +1,6 @@
+{"match_id":"EPL_2025-11-08_TOT_MUN","league":"EPL","date":"2025-11-08","home":"Tottenham","away":"Man United","venue_home":"home",
+ "soccer_inputs":{"home":{"team_attack_xg_5":1.75,"team_defense_xga_5":1.20,"shots_per90":15.2,"shots_allowed_per90":10.8,"conversion_ratio":0.98,"field_tilt_avg":0.56,"pace":0.60,"control_clash":false,"double_tilt":true},"away":{"team_attack_xg_5":1.60,"team_defense_xga_5":1.25,"shots_per90":13.5,"shots_allowed_per90":11.7,"conversion_ratio":0.96,"field_tilt_avg":0.49,"pace":0.58,"control_clash":false,"double_tilt":true}},
+ "bcfi":{"home":0.00,"away":0.00}}
+{"match_id":"LL_2025-11-09_RAY_RMA","league":"LaLiga","date":"2025-11-09","home":"Rayo","away":"Real Madrid","venue_home":"home",
+ "soccer_inputs":{"home":{"team_attack_xg_5":1.05,"team_defense_xga_5":1.10,"shots_per90":10.1,"shots_allowed_per90":12.8,"conversion_ratio":0.98,"field_tilt_avg":0.47,"pace":0.48,"control_clash":true,"double_tilt":false},"away":{"team_attack_xg_5":1.75,"team_defense_xga_5":0.85,"shots_per90":14.8,"shots_allowed_per90":9.5,"conversion_ratio":1.02,"field_tilt_avg":0.58,"pace":0.50,"control_clash":true,"double_tilt":false}},
+ "bcfi":{"home":0.00,"away":0.62}}

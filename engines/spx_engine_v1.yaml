@@ -1,0 +1,67 @@
+name: SPX
+version: v1
+category: engine
+description: >
+  Score Prediction eXecutor. Produces projected score ranges, goal/run/point bands,
+  and a volatility tier using team quality, matchup style, manager identity, and suppression signals.
+
+sports_supported: [soccer]
+
+common_inputs:
+  venue: {type: string, enum: [home, away]}
+  bcfi: {type: float, range: [0,1], desc: "Big Club Fade Index for elite sides; 0 for non-elite"}
+  manager_profile: {ref: "guards/mil_schema_v1.yaml"}
+
+soccer_inputs:
+  team_attack_xg_5: float
+  team_defense_xga_5: float
+  shots_per90: float
+  shots_allowed_per90: float
+  conversion_ratio: {type: float, desc: "Goals/xG, regressed to 1.0"}
+  field_tilt_avg: float
+  pace: {type: float, range: [0,1]}
+  control_clash: bool
+  double_tilt: bool
+
+soccer_compute:
+  steps:
+    - name: adjusted_attack
+      formula: "aAtk = team_attack_xg_5 * (0.7 + 0.3 * conversion_ratio)"
+    - name: adjusted_defense
+      formula: "aDef = team_defense_xga_5"
+    - name: base_lambda
+      desc: Use both teams' aAtk to compute match total baseline
+      formula: "lambda_base = (aAtk_team + aAtk_opp)"
+    - name: tempo_modifiers
+      rules:
+        - if control_clash: lambda_delta = lambda_delta - 0.30
+        - if double_tilt: lambda_delta = lambda_delta + 0.40
+        - manager tempo bias: "lambda_delta += (manager_profile.style.tempo - 0.5) * 0.20"
+    - name: bcfi_suppression
+      formula: "lambda_delta += -0.20 * bcfi"
+    - name: lambda_total
+      formula: "lambda_total = max(0.6, lambda_base + lambda_delta)"
+    - name: band_probs
+      method: "Poisson approximation using lambda_total"
+      outputs: [P_over_2_5, P_over_3_5, P_under_2_5]
+    - name: volatility
+      rule: >
+        volatility = 'high' if (double_tilt or P_over_3_5 > 0.45) else
+                     'low'  if (control_clash and P_under_2_5 > 0.55) else
+                     'medium'
+    - name: recommendation
+      rule: >
+        if P_under_2_5 >= 0.56: band = 'Under 2.5'
+        elif P_over_3_5 >= 0.48: band = 'Over 3.5'
+        else: band = 'Over 2.5'
+
+outputs:
+  soccer:
+    lambda_total: float
+    band: string
+    band_probs: {under_2_5: float, over_2_5: float, over_3_5: float}
+    volatility: {type: string, enum: [low, medium, high]}
+
+notes:
+  - SPX must read current manager style from MIL and apply the tempo adjustment each run.
+  - Use Goalscape v0.1 if you prefer explicit Poisson implementation and richer inputs.

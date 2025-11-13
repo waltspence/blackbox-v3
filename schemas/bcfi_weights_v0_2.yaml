@@ -1,0 +1,26 @@
+name: BCFI
+version: v0.2
+weights:
+  SFS: 0.22
+  MS:  0.18
+  LIS: 0.18
+  MIP: 0.12
+  OSR: 0.15
+  VST: 0.15
+thresholds:
+  no_anchor_away: 0.58
+  no_anchor_home: 0.60
+  full_fade: 0.72
+labels:
+  Mild Risk: [0.40, 0.57]
+  Trap Watch: [0.60, 0.71]
+  Full Fade: [0.72, 1.00]
+recalc:
+  inputs_from_mil:
+    - style.press_intensity
+    - style.tempo
+    - style.subs_aggressiveness
+    - rotation_rate
+    - xg_trend_6.for_slope
+    - xg_trend_6.against_slope
+  output_fields: [bcfi.score, bcfi.label, bcfi.actions]

@@ -1,0 +1,15 @@
+name: MIL_Validation_Rules
+version: v1
+critical:
+  - manager.name: non_empty
+  - manager.start_date: is_date
+  - tier1.last5_results: regex ^[WDL]{1,5}$
+  - style.tempo: 0.0 <= x <= 1.0
+  - style.press_intensity: 0.0 <= x <= 1.0
+  - tier2.tactical_system: in_enum
+warnings:
+  - league_position: 1 <= x <= 24
+  - home_away_splits.points_pct_delta: -1.0 <= x <= 1.0
+sanity_guards:
+  - "if tactical_system in ['4-3-3','4-2-3-1'] and possession_bias > 0.7 then tempo >= 0.45"
+  - "if rotation_rate > 0.7 then subs_aggressiveness >= 0.5"

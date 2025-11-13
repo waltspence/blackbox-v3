@@ -1,0 +1,36 @@
+name: BCFI
+version: v0.2
+category: rubric
+description: >
+  Big Club Fade Index. Scores suppression/trap risk for elite clubs and gates anchor usage.
+
+weights:
+  SFS: 0.22   # Squad Fatigue Score
+  MS:  0.18   # Motivation Slope
+  LIS: 0.18   # Lineup Integrity Score
+  MIP: 0.12   # Manager Intent Profile (from MIL)
+  OSR: 0.15   # Opponent Suppression Rating (deep block, xGA, press resistance)
+  VST: 0.15   # Volatility Suppression Trigger (control-control, low chaos)
+
+score_formula: "BCFI = 0.22*SFS + 0.18*MS + 0.18*LIS + 0.12*MIP + 0.15*OSR + 0.15*VST"
+
+thresholds:
+  no_anchor_away: 0.58
+  no_anchor_home: 0.60
+  full_fade: 0.72
+  mild_risk: [0.40, 0.57]
+tags:
+  - TrapSpot: "BCFI >= 0.60"
+  - SterileControl: "VST >= 0.65 and control_control == true"
+  - RotationRisk: "LIS >= 0.60"
+adjustments:
+  deep_block_opponent: "+0.05"
+  fixture_congestion: "+0.05 if three matches in eight days"
+  must_win: "-0.05 when MS >= 0.75"
+
+outputs:
+  bcfi: float
+  label: [Normal, Mild Risk, Trap Watch, Full Fade]
+  actions:
+    - forbid_anchor: "if bcfi >= thresholds.no_anchor_{venue}"
+    - prefer_undercurrent: "if SterileControl"
