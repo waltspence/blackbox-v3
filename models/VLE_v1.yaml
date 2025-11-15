@@ -1,0 +1,14 @@
+
+name: VLE
+version: v1
+description: Value-to-Line Efficiency score + tagging.
+inputs: [p_model, american_odds]
+steps:
+  - implied_prob_from_american: "p_raw = A/(A+100) if A>0 else 100/(|A|+100)"
+  - de_vig: "p_vigless = p_raw * 0.955  # single-side haircut"
+  - efficiency: "vle = p_model - p_vigless"
+tags:
+  Underpriced: "vle >= 0.04"
+  Fair: "abs(vle) < 0.04"
+  Overpriced: "vle <= -0.04"
+outputs: [vle, tag]

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PropLeg",
+  "type": "object",
+  "required": [
+    "leg_id",
+    "sport",
+    "player",
+    "team",
+    "market",
+    "line",
+    "american_odds"
+  ],
+  "properties": {
+    "leg_id": {
+      "type": "string"
+    },
+    "sport": {
+      "type": "string",
+      "enum": [
+        "soccer",
+        "nba"
+      ]
+    },
+    "player": {
+      "type": "string"
+    },
+    "team": {
+      "type": "string"
+    },
+    "market": {
+      "type": "string",
+      "enum": [
+        "shots",
+        "sog"
+      ]
+    },
+    "line": {
+      "type": "number"
+    },
+    "american_odds": {
+      "type": "integer"
+    },
+    "minutes_override": {
+      "type": "number"
+    },
+    "tempo_adj": {
+      "type": "number",
+      "description": "0.85\u20131.15 from SPX tempo"
+    },
+    "bcfi": {
+      "type": "number"
+    },
+    "injury_guard": {
+      "type": "boolean",
+      "default": true
+    },
+    "lineup_guard": {
+      "type": "boolean",
+      "default": true
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

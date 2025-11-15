@@ -1,0 +1,28 @@
+
+name: PlayerPanel
+version: v1
+description: Canonical player-level panel for prop pricing and team decomposition.
+fields:
+  player_id: {type: string, required: true}
+  player_name: {type: string, required: true}
+  sport: {type: string, enum: [soccer, nba], required: true}
+  team: {type: string, required: true}
+  position: {type: string}
+  minutes_proj: {type: float, desc: "Projected minutes this match/game"}
+  role: {type: string, desc: "starter | bench | rotation"}
+  usage_adj: {type: float, desc: "0.7–1.3 scalar reflecting role/usage deltas", default: 1.0}
+  shots_per90: {type: float, desc: "soccer shots per 90; null for nba"}
+  sog_rate: {type: float, desc: "on-target rate for soccer shots (0..1)"}
+  xg_per90: {type: float, desc: "soccer expected goals per 90"}
+  passes_per90: {type: float}
+  shots_per36: {type: float, desc: "nba shots per 36; null for soccer"}
+  oncourt_usage: {type: float, desc: "nba usage proxy 0..1", default: 0.20}
+  injury_status: {type: string, enum: [out, doubtful, questionable, probable, healthy], default: healthy}
+  lineup_status: {type: string, enum: [confirmed, expected, unknown], default: unknown}
+  mil_links:
+    manager_tempo: {type: float, range: [0,1]}
+    press_intensity: {type: float, range: [0,1]}
+    subs_aggressiveness: {type: float, range: [0,1]}
+notes:
+  - For nba, set `shots_per36` and `minutes_proj` (36 scaling).
+  - For soccer, set `shots_per90`, `sog_rate`, and `minutes_proj` (90 scaling).

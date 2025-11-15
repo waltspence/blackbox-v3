@@ -1,0 +1,5 @@
+leg_id,sport,player,team,market,line,american_odds,minutes_override,tempo_adj,bcfi,injury_guard,lineup_guard,tags
+leg1,soccer,Erling Haaland,Manchester City,shots,4.5,-120,,1.03,0.10,True,True,anchor_candidate|elite
+leg2,soccer,Cole Palmer,Chelsea,sog,1.5,120,,1.05,0.44,True,True,squeeze_candidate
+leg3,nba,Stephen Curry,GSW,shots,11.5,-110,,1.02,,True,True,
+leg4,nba,LeBron James,LAL,shots,10.5,105,,1.00,,True,True,rotation_risk

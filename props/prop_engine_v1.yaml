@@ -1,0 +1,27 @@
+
+name: PropEngine
+version: v1
+markets:
+  soccer:
+    shots:
+      distribution: Poisson
+      lambda: "shots_per90 * (minutes/90) * usage_adj * tempo_adj"
+    sog:
+      distribution: Poisson
+      lambda: "shots_per90 * sog_rate * (minutes/90) * usage_adj * tempo_adj"
+  nba:
+    shots:
+      distribution: Poisson
+      lambda: "shots_per36 * (minutes/36) * usage_adj * tempo_adj"
+    sog:
+      distribution: Poisson
+      lambda: "shots_per36 * on_target_proxy * (minutes/36) * usage_adj * tempo_adj"
+guards:
+  - "injury_status != 'out'"
+  - "lineup_status in ['confirmed','expected'] and minutes > 0"
+  - "drop if minutes < 8 for soccer; < 10 for nba"
+integration:
+  mil: "style.tempo -> tempo_adj; subs_aggressiveness -> minutes uncertainty"
+  spx: "volatility/tempo informs tempo_adj"
+  fairline: "prob -> fair odds, edge, EV"
+  slipforge: "emit canonical leg with p_model, EV, tags"

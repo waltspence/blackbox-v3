@@ -1,0 +1,5 @@
+player_id,player_name,sport,team,position,minutes_proj,role,usage_adj,shots_per90,sog_rate,xg_per90,passes_per90,shots_per36,oncourt_usage,injury_status,lineup_status,mil_manager_tempo,mil_press_intensity,mil_subs_aggressiveness
+p1,Erling Haaland,soccer,Manchester City,ST,85,starter,1.00,4.6,0.47,0.90,16.0,,,healthy,confirmed,0.55,0.48,0.30
+p2,Cole Palmer,soccer,Chelsea,RW,78,starter,1.05,3.2,0.42,0.45,55.0,,,healthy,confirmed,0.58,0.52,0.45
+p3,Stephen Curry,nba,GSW,PG,34,starter,1.00,,,,,20.5,0.30,healthy,expected,0.50,0.40,0.35
+p4,LeBron James,nba,LAL,SF,34,starter,0.98,,,,,18.2,0.28,questionable,expected,0.48,0.38,0.30
