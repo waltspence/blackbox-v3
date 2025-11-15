@@ -1,0 +1,9 @@
+rsi_caps:
+  low: {unit_cap: 1.0, br_cap: 0.02}
+  medium: {unit_cap: 0.75, br_cap: 0.015}
+  high: {unit_cap: 0.5, br_cap: 0.01}
+  very_high: {unit_cap: 0.3, br_cap: 0.006}
+
+templates:
+  bank_builder: {min_unit: 0.75, max_unit: 1.00}
+  spray: {min_unit: 0.20, max_unit: 0.30}
