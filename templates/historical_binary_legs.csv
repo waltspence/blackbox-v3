@@ -1,0 +1,7 @@
+leg_key,player,team,match_id,market,line,hit,date
+HAAL_SHOTS,Erling Haaland,MCY,EPL_2025_11_01_MCY_MUN,shots,4.5,1,2025-11-01
+HAAL_SOG,Erling Haaland,MCY,EPL_2025_11_01_MCY_MUN,sog,1.5,1,2025-11-01
+PALM_SHOTS,Cole Palmer,CHE,EPL_2025_11_01_CHE_TOT,shots,2.5,1,2025-11-01
+PALM_SOG,Cole Palmer,CHE,EPL_2025_11_01_CHE_TOT,sog,0.5,1,2025-11-01
+CURRY_SHOTS,Stephen Curry,GSW,NBA_2025_11_01_GSW_LAL,shots,11.5,0,2025-11-01
+LEBRON_SHOTS,LeBron James,LAL,NBA_2025_11_01_GSW_LAL,shots,10.5,1,2025-11-01

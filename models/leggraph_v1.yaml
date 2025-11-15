@@ -1,0 +1,10 @@
+name: LegGraph
+version: v1
+families:
+  same_player: {sign: positive}
+  teammate_load_share: {sign: mixed}
+  team_total_to_player: {sign: positive}
+  totals_to_corners: {sign: mixed}
+  cross_match: {sign: near_zero}
+guards: {max_abs_rho: 0.95, psd_repair: true}
+artifacts: ["artifacts/corr_matrix.json","artifacts/corr_matrix.csv"]
