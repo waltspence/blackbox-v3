@@ -1,0 +1,13 @@
+risk_budget:
+  max_bankroll_fraction: 0.05   # total across all slips in one run
+  per_slip_unit_cap: 1.20       # hard cap in units for any single slip
+
+exposure_caps:
+  per_player_units: 1.50
+  per_team_units: 2.50
+
+rsi_caps:
+  low:       {unit_cap: 1.00, br_cap: 0.020}
+  medium:    {unit_cap: 0.75, br_cap: 0.015}
+  high:      {unit_cap: 0.50, br_cap: 0.010}
+  very_high: {unit_cap: 0.30, br_cap: 0.006}

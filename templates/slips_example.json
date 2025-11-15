@@ -1,0 +1,4 @@
+[
+  {"slip_id": "S1_demo", "legs": ["LEG_A","LEG_B"]},
+  {"slip_id": "S2_demo", "legs": ["LEG_A","LEG_B"]}
+]
