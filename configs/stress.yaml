@@ -1,0 +1,6 @@
+sims: 20000
+var_alpha: 0.05         # 5% VaR
+es_alpha: 0.05          # 5% Expected Shortfall
+spray_var_limit: 0.03   # 3% bankroll VaR limit for spray template
+spray_min_factor: 0.5   # if breached, cut spray stakes to at least 50%
+spray_max_factor: 1.0   # never raise above 1.0 here
