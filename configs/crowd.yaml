@@ -1,0 +1,19 @@
+blend:
+  mode: HB
+  shrink_floor: 0.15
+  shrink_ceiling: 0.65
+
+weights:
+  book_base: 0.25
+  exchange_base: 0.40
+  tipster_base: 0.20
+  public_base: 0.10
+  liq_scale: 0.00005
+
+guards:
+  min_sources: 2
+  max_jump_cents: 12
+  min_time_to_close_min: 30
+
+diagnostics:
+  mad_k: 2.5
