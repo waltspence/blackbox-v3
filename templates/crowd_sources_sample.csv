@@ -1,0 +1,8 @@
+leg_id,src,kind,p,liquidity
+LEG_A,fanduel,book,0.57,
+LEG_A,draftkings,book,0.59,
+LEG_A,betfair,exchange,0.58,15000
+LEG_A,tipster_pool,tipster,0.61,
+LEG_B,fanduel,book,0.52,
+LEG_B,draftkings,book,0.55,
+LEG_B,betfair,exchange,0.54,9000

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LegCrowd",
+  "type": "object",
+  "properties": {
+    "leg_id": {
+      "type": "string"
+    },
+    "p_model": {
+      "type": "number"
+    },
+    "p_crowd_mean": {
+      "type": "number"
+    },
+    "p_crowd_post": {
+      "type": "number"
+    },
+    "crowd_conf": {
+      "type": "number"
+    },
+    "dispersion": {
+      "type": "number"
+    },
+    "sources": {
+      "type": "array"
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "leg_id",
+    "p_model",
+    "p_crowd_mean",
+    "p_crowd_post",
+    "crowd_conf",
+    "dispersion",
+    "updated_at"
+  ]
+}
