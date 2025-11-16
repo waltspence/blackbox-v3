@@ -1,0 +1,4 @@
+import json\n\n
+def american_to_decimal(a):\n    return 1 + (a/100.0) if a>0 else 1 + (100.0/abs(a))\n\n
+def normalize_row(row):\n    a = float(row['american'])\n    dec = float(row.get('decimal') or american_to_decimal(a))\n    return {\n        'leg_id': str(row['leg_id']),\n        'book': str(row['book']).lower(),\n        'market': str(row.get('market','main')).lower(),\n        'line': row.get('line'),\n        'side': str(row.get('side','')).upper(),\n        'subject': str(row.get('subject','')),\n        'american': int(a),\n        'decimal': float(dec),\n        'ts': row.get('ts')\n    }\n\n
+def load_json_many(paths):\n    out=[]\n    for p in paths:\n        try:\n            for r in json.load(open(p,'r',encoding='utf-8')):\n                out.append(normalize_row(r))\n        except Exception:\n            continue\n    return out\n

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LegPrice",
+  "type": "object",
+  "properties": {
+    "leg_id": {
+      "type": "string"
+    },
+    "book": {
+      "type": "string"
+    },
+    "market": {
+      "type": "string"
+    },
+    "line": {
+      "type": [
+        "number",
+        "string"
+      ]
+    },
+    "side": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "american": {
+      "type": "number"
+    },
+    "decimal": {
+      "type": "number"
+    },
+    "ts": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "leg_id",
+    "book",
+    "market",
+    "side",
+    "subject",
+    "american"
+  ]
+}

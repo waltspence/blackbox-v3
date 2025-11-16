@@ -1,0 +1,1 @@
+# adapters/\nDate: 2025-11-16\n
