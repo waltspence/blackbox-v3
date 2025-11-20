@@ -37,6 +37,8 @@ def phi_inv(p):
 
 def joint_binary_samples(marginals, R, samples=10000, seed=42):
     n=len(marginals)
+        # Deep copy R to avoid mutating the input
+    R = [row[:] for row in R]
     for i in range(n):
         R[i][i]=1.0
         for j in range(i+1,n):
