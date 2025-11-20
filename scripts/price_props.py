@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 import sys, os, csv, json, math, datetime
+from scipy import stats
+
+# Configuration constants
+DEFAULT_VIG_HAIRCUT = 0.045
+MIN_MINUTES_SOCCER = 8
+MIN_MINUTES_NBA = 10
+DEFAULT_SOG_RATE = 0.35
+MAX_FACTORIAL_LINE = 170  # Prevent overflow
 
 def american_to_decimal(A):
     return 1 + (A/100.0) if A > 0 else 1 + (100.0/abs(A))
@@ -7,16 +15,16 @@ def american_to_decimal(A):
 def implied_from_american(A):
     return (A/(A+100.0)) if A>0 else (100.0/(abs(A)+100.0))
 
-def de_vig_single_side(p_raw, haircut=0.045):
+def de_vig_single_side(p_raw, haircut=DEFAULT_VIG_HAIRCUT):
     return max(0.01, min(0.99, p_raw * (1 - haircut)))
-
 def poisson_sf(k, lam):
-    thr = math.floor(k) + 1
-    s = 0.0
-    for i in range(thr):
-        s += math.exp(-lam) * (lam**i) / math.factorial(i)
-    return 1.0 - s
-
+    """Calculate P(X > k) using scipy for accuracy and overflow protection."""
+    if lam <= 0:
+        return 0.0
+    if k > MAX_FACTORIAL_LINE:
+        # For very large k, approximate or warn
+        return 0.0
+    return stats.poisson.sf(k, lam)
 def guard_ok(player, leg, sport):
     if leg.get("injury_guard", True):
         if player["injury_status"] == "out":
@@ -29,9 +37,9 @@ def guard_ok(player, leg, sport):
         return False, "no_minutes"
     if sport == "soccer" and float(minutes) < 8:
         return False, "minutes_too_low"
-    if sport == "nba" and float(minutes) < 10:
+    if sport == "nba" and float(minutes) < MIN_MINUTES_NBA:
         return False, "minutes_too_low"
-    return True, ""
+    return True, MIN_MINUTES_SOCCER
 
 def load_players(path):
     panel = {}
@@ -93,12 +101,12 @@ def main(players_csv, legs_csv):
                 if market == "shots":
                     lam = (player["shots_per90"] or 0.0) * (minutes/90.0) * usage_adj * tempo_adj
                 elif market == "sog":
-                    sog_rate = player["sog_rate"] if player["sog_rate"] is not None else 0.35
+                    sog_rate = player["sog_rate"] if player["sog_rate"] is not None else DEFAULT_SOG_RATE
                     lam = (player["shots_per90"] or 0.0) * sog_rate * (minutes/90.0) * usage_adj * tempo_adj
                 else:
                     dropped.append({"leg_id": row["leg_id"], "reason": "unsupported_market"}); continue
-            elif sport == "nba":
-                if market == "shots":
+        elif sport == "nba":
+                    if market == "shots":
                     lam = (player["shots_per36"] or 0.0) * (minutes/36.0) * usage_adj * tempo_adj
                 elif market == "sog":
                     dropped.append({"leg_id": row["leg_id"], "reason": "nba_sog_not_supported"}); continue
@@ -112,11 +120,9 @@ def main(players_csv, legs_csv):
             fair_dec = 1.0 / max(1e-6, p_over)
             fair_amer = round((fair_dec-1.0)*100) if fair_dec >= 2.0 else round(-100.0/(fair_dec-1.0))
             p_raw = (A/(A+100.0)) if A>0 else (100.0/(abs(A)+100.0))
-            p_vigless = max(0.01, min(0.99, p_raw * (1 - 0.045)))
-            vle = p_over - p_vigless
+    p_vigless = max(0.01, min(0.99, p_raw * (1 - DEFAULT_VIG_HAIRCUT)))            vle = p_over - p_vigless
             tag = "Underpriced" if vle >= 0.04 else ("Overpriced" if vle <= -0.04 else "Fair")
             EV100 = p_over*100.0*(american_to_decimal(A)-1.0) - (1.0 - p_over)*100.0
-
             out.append({
                 "leg_id": row["leg_id"],
                 "sport": sport,
