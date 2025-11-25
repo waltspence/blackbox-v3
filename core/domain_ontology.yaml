@@ -1,0 +1,71 @@
+# BlackBox v3 Three-Domain Ontology
+# Date: 2025-11-24
+# Purpose: Core schema defining Entity vs {Entity, Environment, Self}
+
+version: "3.0.0"
+philosophy: |
+  All sports betting edge exists at the intersection of three orthogonal domains:
+  - Domain I: Entity vs. Entity (competitive skill differential)
+  - Domain II: Entity vs. Environment (contextual modifiers)
+  - Domain III: Entity vs. Self (internal variance/psychology)
+
+domains:
+  domain_i:
+    name: "Entity vs. Entity"
+    description: "Pure competitive skill matchup"
+    components:
+      - xg_differential
+      - tactical_mismatch
+      - h2h_context
+      - manager_chess_rating
+    reliability: high
+    market_efficiency: medium
+    
+  domain_ii:
+    name: "Entity vs. Environment"
+    description: "Contextual forces that modify performance"
+    components:
+      - travel_fatigue
+      - rest_differential
+      - venue_impact
+      - motivation_asymmetry
+      - schedule_density
+      - weather_conditions
+    reliability: medium
+    market_efficiency: low
+    
+  domain_iii:
+    name: "Entity vs. Self"
+    description: "Internal variance and psychological state"
+    components:
+      - variance_z_score
+      - regression_pressure
+      - clutch_factor
+      - depth_strain
+      - momentum_bias
+    reliability: low
+    market_efficiency: very_low
+
+integration_rules:
+  hierarchy: "Domain I → Domain II → Domain III"
+  composition: "EV = Domain_I_Base × Domain_II_Modifier ± Domain_III_Uncertainty"
+  
+  domain_i_trust: 0.85  # High confidence in skill reads
+  domain_ii_trust: 0.70  # Medium confidence in context
+  domain_iii_trust: 0.40  # Low confidence in variance
+
+market_psychology:
+  public_weights:
+    domain_i: 0.90  # Public overweights talent
+    domain_ii: 0.20  # Public ignores context
+    domain_iii: 0.60  # Public chases variance
+  
+  sharp_weights:
+    domain_i: 0.70
+    domain_ii: 0.80
+    domain_iii: 0.30
+
+correlation_mechanics:
+  shared_environment: 0.40  # High correlation via Domain II
+  tactical_interaction: 0.30  # Medium correlation via Domain I
+  variance_linkage: 0.10  # Low correlation via Domain III
