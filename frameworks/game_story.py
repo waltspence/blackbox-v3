@@ -6,9 +6,37 @@ Captures narrative, motivation, availability, and rivalry factors
 to adjust Domain I (Skill), Domain II (Environment), and Domain III (Variance).
 """
 
-from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
+from dataclasses import dataclass
+from typing import List, Optional, Dict, Any, Union
+from pydantic import BaseModel, Field, ValidationError
 
+# --- Pydantic Schemas for Validation ---
+class CompetitionModel(BaseModel):
+    name: str = "Unknown Competition"
+    phase: str = "League"
+    leg: Optional[int] = None
+    aggregate: Optional[str] = None # e.g. "1-2"
+
+class TeamModel(BaseModel):
+    position: int = 0
+    points_gap: float = 0.0
+    incentive: str = "neutral"
+    injuries: List[str] = Field(default_factory=list)
+    rotation_risk: float = Field(0.0, ge=0.0, le=1.0)
+    form_w5: str = "DDDDD"
+    # Added field for precise knockout calcs if available, default to 0
+    aggregate_gap: float = 0.0 
+
+class MetaModel(BaseModel):
+    is_derby: bool = False
+
+class MatchInputSchema(BaseModel):
+    competition: CompetitionModel = Field(default_factory=CompetitionModel)
+    home_team: TeamModel = Field(default_factory=TeamModel)
+    away_team: TeamModel = Field(default_factory=TeamModel)
+    meta: MetaModel = Field(default_factory=MetaModel)
+
+# --- Data Class ---
 @dataclass
 class GameContext:
     competition: str
@@ -21,155 +49,183 @@ class GameContext:
     away_position: int
     away_points_gap: float
     
-    home_incentive: str  # must_win | qualified | dead_rubber | look_ahead
+    home_incentive: str  # must_win | qualified | dead_rubber | look_ahead | chasing
     away_incentive: str
     
     home_injuries: List[str]
     away_injuries: List[str]
-    home_rotation_risk: float  # 0-1
+    home_rotation_risk: float
     away_rotation_risk: float
     
-    home_form_w5: str  # e.g. "WWLDW"
+    home_form_w5: str
     away_form_w5: str
-    home_confidence: float  # 0-1
+    home_confidence: float
     away_confidence: float
     
     is_derby: bool
-    derby_intensity_boost: float  # 0-0.1, added to variance
+    derby_intensity_boost: float
     
-    narrative: str = field(default="")  # 2-3 sentence summary
+    narrative: str = ""
+
+# --- Helper Functions ---
+
+def clamp(n: float, minn: float = 0.01, maxn: float = 0.99) -> float:
+    """Clamps a value between minn and maxn."""
+    return max(min(maxn, n), minn)
 
 def _calculate_confidence(form_string: str) -> float:
     """
-    Converts 5-game form string (W/D/L) into 0-1 confidence float.
-    Weights: W=3, D=1, L=0. Max score = 15.
+    Converts form string (W/D/L) into 0-1 confidence float.
+    Dynamically adjusts for short seasons (len < 5).
     """
     if not form_string:
         return 0.5
     
     score = 0
     points_map = {'W': 3, 'D': 1, 'L': 0}
+    games_played = len(form_string)
     
     for char in form_string.upper():
         score += points_map.get(char, 0)
+    
+    # Max possible score is games_played * 3
+    max_score = games_played * 3
+    if max_score == 0: 
+        return 0.5
         
-    # Normalize 0-15 scale to 0-1
-    return min(max(score / 15.0, 0.0), 1.0)
+    raw_conf = score / max_score
+    return clamp(raw_conf) # Keep within 0.01 - 0.99 safe zone
+
+def _calculate_knockout_urgency(ctx: GameContext) -> None:
+    """
+    Modifies context in-place if a team is chasing a deficit in Leg 2.
+    """
+    if ctx.leg == 2:
+        # Check Home
+        if ctx.home_points_gap < 0: # Reusing points_gap field for agg gap in knockouts
+            ctx.home_incentive = 'chasing'
+        # Check Away
+        if ctx.away_points_gap < 0:
+            ctx.away_incentive = 'chasing'
 
 def _generate_narrative(ctx: GameContext) -> str:
     """Synthesizes context into a brief narrative string."""
     derby_text = "DERBY MATCH. " if ctx.is_derby else ""
     stakes_text = f"Home: {ctx.home_incentive}, Away: {ctx.away_incentive}."
+    
     injury_text = ""
     if len(ctx.home_injuries) > 2 or len(ctx.away_injuries) > 2:
-        injury_text = " Significant squad depletion detected."
+        injury_text = " Significant squad depletion."
     
     return f"{derby_text}{stakes_text} Home Conf: {ctx.home_confidence:.2f}.{injury_text}"
 
+# --- Main Functions ---
+
 def build_game_context(match_data: Dict[str, Any]) -> GameContext:
     """
-    Parse match metadata and return GameContext.
-    
-    Args:
-        match_data: Raw dictionary containing competition, standings, 
-                    team_news, and form data.
+    Parse match metadata using Pydantic validation and return GameContext.
+    Returns default context if validation fails (prints warning).
     """
-    # Extract sub-dictionaries with safe defaults
-    comp = match_data.get('competition', {})
-    home = match_data.get('home_team', {})
-    away = match_data.get('away_team', {})
-    meta = match_data.get('meta', {})
+    try:
+        # Pydantic Validation
+        data = MatchInputSchema(**(match_data or {}))
+    except ValidationError as e:
+        # In production, log this. For now, print and return a safe default.
+        print(f"Validation Error in build_game_context: {e}")
+        data = MatchInputSchema() # Empty default
 
-    # Calculate confidence based on form
-    h_form = home.get('form_w5', 'DDDDD')
-    a_form = away.get('form_w5', 'DDDDD')
-    
-    h_conf = _calculate_confidence(h_form)
-    a_conf = _calculate_confidence(a_form)
+    # Confidence Math
+    h_conf = _calculate_confidence(data.home_team.form_w5)
+    a_conf = _calculate_confidence(data.away_team.form_w5)
 
-    # Determine Derby Status
-    is_derby = meta.get('is_derby', False)
-    derby_boost = 0.08 if is_derby else 0.0
+    # Derby Logic
+    derby_boost = 0.08 if data.meta.is_derby else 0.0
 
     context = GameContext(
-        competition=comp.get('name', 'Unknown'),
-        phase=comp.get('phase', 'League'),
-        leg=comp.get('leg'),
-        aggregate_score=comp.get('aggregate'),
+        competition=data.competition.name,
+        phase=data.competition.phase,
+        leg=data.competition.leg,
+        aggregate_score=data.competition.aggregate,
         
-        home_position=home.get('position', 0),
-        home_points_gap=home.get('points_gap', 0.0),
-        away_position=away.get('position', 0),
-        away_points_gap=away.get('points_gap', 0.0),
+        home_position=data.home_team.position,
+        home_points_gap=data.home_team.aggregate_gap if data.competition.phase == 'Knockout' else data.home_team.points_gap,
+        away_position=data.away_team.position,
+        away_points_gap=data.away_team.aggregate_gap if data.competition.phase == 'Knockout' else data.away_team.points_gap,
         
-        home_incentive=home.get('incentive', 'neutral'),
-        away_incentive=away.get('incentive', 'neutral'),
+        home_incentive=data.home_team.incentive,
+        away_incentive=data.away_team.incentive,
         
-        home_injuries=home.get('injuries', []),
-        away_injuries=away.get('injuries', []),
-        home_rotation_risk=home.get('rotation_risk', 0.0),
-        away_rotation_risk=away.get('rotation_risk', 0.0),
+        home_injuries=data.home_team.injuries,
+        away_injuries=data.away_team.injuries,
         
-        home_form_w5=h_form,
-        away_form_w5=a_form,
+        home_rotation_risk=clamp(data.home_team.rotation_risk),
+        away_rotation_risk=clamp(data.away_team.rotation_risk),
+        
+        home_form_w5=data.home_team.form_w5,
+        away_form_w5=data.away_team.form_w5,
         home_confidence=h_conf,
         away_confidence=a_conf,
         
-        is_derby=is_derby,
+        is_derby=data.meta.is_derby,
         derby_intensity_boost=derby_boost
     )
     
-    # Generate narrative string after object creation
+    # Apply special logic layers
+    if data.competition.phase == 'Knockout':
+        _calculate_knockout_urgency(context)
+        
     context.narrative = _generate_narrative(context)
     return context
 
 def get_domain_adjustments(context: GameContext) -> Dict[str, Any]:
     """
-    Translates narrative context into mathematical adjustments 
-    for the Three-Domain Pipeline.
+    Translates narrative context into mathematical adjustments.
     """
     adjustments = {
-        'domain_i_adjustment': 0.0,      # Skill/Power
-        'domain_ii_adjustment': 0.0,     # Environment/Tempo
-        'domain_iii_variance_boost': 0.0, # Volatility
+        'domain_i_adjustment': 0.0,      # Skill/Power tweak
+        'domain_ii_adjustment': 0.0,     # Environment/Tempo tweak
+        'domain_iii_variance_boost': 0.0, # Volatility/Sigma tweak
         'risk_flags': []
     }
     
-    # --- Domain I: Skill Adjustments (Injuries & Confidence) ---
-    # Penalize for injuries (simplified heuristic)
+    # --- Domain I: Skill Adjustments ---
+    # Calc raw delta
     h_injury_pen = len(context.home_injuries) * 0.02
     a_injury_pen = len(context.away_injuries) * 0.02
-    
-    # Confidence impact (high confidence boosts skill slightly)
     h_conf_boost = (context.home_confidence - 0.5) * 0.03
     a_conf_boost = (context.away_confidence - 0.5) * 0.03
 
-    # Net skill adjustment (Positive favors Home, Negative favors Away)
-    adjustments['domain_i_adjustment'] = (h_conf_boost - h_injury_pen) - (a_conf_boost - a_injury_pen)
+    raw_skill_adj = (h_conf_boost - h_injury_pen) - (a_conf_boost - a_injury_pen)
+    
+    # Safety Clamp on the adjustment itself to prevent model breakage
+    # We allow negative adjustments, so we clamp magnitude
+    adjustments['domain_i_adjustment'] = max(min(raw_skill_adj, 0.15), -0.15)
 
-    # --- Domain II: Environment (Tempo/Intensity) ---
-    # Derbies usually imply higher tempo or tighter checking
+    # --- Domain II: Environment ---
     if context.is_derby:
         adjustments['domain_ii_adjustment'] += 0.05
         adjustments['risk_flags'].append('high_intensity')
 
-    # Dead rubbers often lead to open, low-defense games
     if context.home_incentive == 'dead_rubber' and context.away_incentive == 'dead_rubber':
-        adjustments['domain_ii_adjustment'] -= 0.1  # Looser play
+        adjustments['domain_ii_adjustment'] -= 0.1
         adjustments['risk_flags'].append('possible_open_game')
 
     # --- Domain III: Variance/Volatility ---
-    # Base variance boost from derby
-    adjustments['domain_iii_variance_boost'] += context.derby_intensity_boost
+    var_boost = context.derby_intensity_boost
     
-    # Must win vs Dead Rubber creates volatility
     if context.home_incentive == 'must_win':
-        adjustments['domain_iii_variance_boost'] += 0.02
+        var_boost += 0.02
         adjustments['risk_flags'].append('home_desperation')
         
-    # Look ahead spots increase variance (favorite might underperform)
+    if context.home_incentive == 'chasing' or context.away_incentive == 'chasing':
+        var_boost += 0.15 # Massive volatility boost for 2nd leg comebacks
+        adjustments['risk_flags'].append('chasing_game_script')
+        
     if 'look_ahead' in [context.home_incentive, context.away_incentive]:
-        adjustments['domain_iii_variance_boost'] += 0.04
+        var_boost += 0.04
         adjustments['risk_flags'].append('rotation_risk')
+
+    # Clamp Variance Boost (must be positive)
+    adjustments['domain_iii_variance_boost'] = clamp(var_boost, 0.0, 0.30)
 
     return adjustments
