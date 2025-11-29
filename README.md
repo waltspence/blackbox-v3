@@ -1,7 +1,6 @@
 # BlackBox v3: Sports Betting Analytics Framework
 
 ![Python](https://img.shields.io/badge/python-3.11-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 
 **BlackBox v3** is an advanced quantitative sports betting framework that moves beyond simple statistical regression. It utilizes a **Three-Domain Architecture** to separate fundamental skill, narrative context, and variance simulation, creating a "glass box" prediction engine.
