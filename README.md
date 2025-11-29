@@ -1,115 +1,82 @@
-# Blackbox v2 — Elite Sports Betting Quant System
+# BlackBox v3: Sports Betting Analytics Framework
 
-**Date:** 2025-11-15
+![Python](https://img.shields.io/badge/python-3.11-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
 
-Complete production-ready quantitative betting system with 7 integrated packs:
+**BlackBox v3** is an advanced quantitative sports betting framework that moves beyond simple statistical regression. It utilizes a **Three-Domain Architecture** to separate fundamental skill, narrative context, and variance simulation, creating a "glass box" prediction engine.
 
-## System Architecture
+The system is deployed as a persistent service using **Discord** as the frontend interface and **Google Firestore** for state management and bankroll tracking.
 
-### Pack #1: PlayerLayer + PropEngine
-- Player data schemas (minutes, role, usage, shots/90, xG/90, passes/90)
-- Markets: Shots, Shots on Goal (SOG) for soccer and NBA
-- VLE (Value-to-Line Efficiency) tagging
-- Runnable pricing script (projections → fair odds, EV, VLE)
+---
 
-### Pack #2: LegGraph
-- Correlation modeling with Gaussian copula
-- Multi-leg dependency analysis
-- SGP true probability calculation
+## 🏗 Architecture
 
-### Pack #3: AutoShopper
-- Multi-book line shopping
-- Best available odds finder
-- Book comparison engine
+The framework splits analysis into three distinct domains:
 
-### Pack #4: Bankroll Manager
-- Kelly Criterion implementation
-- RSI caps and drawdown protection
-- Dynamic stake sizing
+1.  **Domain I (FairLine):** Raw fundamental skill modeling (xG, Power Ratings).
+2.  **Domain II (GameStory):** Contextual adjustments (Motivation, Injuries, Rivalries, Schedule Congestion).
+3.  **Domain III (Variance):** Volatility injection and Monte Carlo simulation parameters.
 
-### Pack #5: SlipKelly
-- Correlation-aware slip-level staking
-- Multi-leg parlay optimization
-- Risk-adjusted position sizing
+**Stack:**
+* **Core:** Python 3.11, Pandas, NumPy, Pydantic
+* **Interface:** Discord.py (Bot)
+* **Database:** Google Firestore (NoSQL)
+* **Infrastructure:** Docker
 
-### Pack #6: Variance & Stress Suite
-- Monte Carlo PnL simulation
-- VaR (Value at Risk) calculation
-- Expected Shortfall (ES) analysis
+---
 
-### Pack #7: CrowdLens (Wisdom of the Crowd)
-- Reliability-weighted book consensus
-- Continuous Learning Score (CLS) calibration
-- Bookmaker credibility ranking
-- Training script: `scripts/auto_train_crowdlens.py`
+## 🚀 Quick Start
 
-## Quick Start
+### Prerequisites
+* Python 3.11+
+* Docker (optional, for production)
+* Firebase Service Account Credentials
+* Discord Bot Token
 
-### 1. Price Props
-```bash
-python scripts/price_props.py templates/players_example.csv templates/legs_input.csv
-```
+### Installation
 
-### 2. Train CrowdLens
-```bash
-# Put historical CSV files in data/
-python3 scripts/auto_train_crowdlens.py \
-  --csv data/E0_2024-25.csv data/SP1_2024-25.csv \
-  --out_dir outputs \
-  --config_out configs/crowd.yaml
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/waltspence/blackbox-v3.git](https://github.com/waltspence/blackbox-v3.git)
+    cd blackbox-v3
+    ```
 
-### 3. Check Outputs
-- Priced legs: `outputs/priced_legs.json`, `outputs/priced_legs.csv`
-- Trained weights: `configs/crowd.yaml`
+2.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-## Integration Map
+3.  **Environment Setup:**
+    Create a `.env` file in the root directory:
+    ```ini
+    DISCORD_TOKEN=your_discord_bot_token
+    FIREBASE_CREDENTIALS_JSON=service-account.json
+    ODDS_API_KEY=your_odds_api_key
+    ```
 
-- **MIL → PlayerLayer:** Manager style (tempo/press/subs) + rotation risk
-- **SPX → PropEngine:** Match tempo/volatility adjusts attempt rates
-- **FairLine:** Fair probability calculation and EV vs book
-- **SlipForge:** Canonical leg output with metadata
-- **CrowdLens:** Book reliability weights inform consensus priors
+4.  **Run the Bot:**
+    ```bash
+    python bot.py
+    ```
 
-## Deployment
+---
 
-### Local
-```bash
-cd ~/Downloads/blkbx-spaces-v2
-./scripts/auto_train_crowdlens.py --csv data/*.csv
-```
+## 📂 Project Structure
 
-### Cloud (DigitalOcean App Platform)
-```bash
-git push origin main
-# Connect repo at cloud.digitalocean.com/apps
-```
-
-## Directory Structure
-
-```
-adapters/     # Book API integrations
-bankroll/     # Kelly + RSI bankroll management
-configs/      # YAML configs (crowd.yaml, etc.)
-core/         # Core odds/probability utilities
-crowd/        # CrowdLens wisdom-of-crowd engine
-data/         # Historical training data
-docs/         # Documentation
-engines/      # Correlation + pricing engines
-frameworks/   # LegGraph correlation framework
-guards/       # Injury/lineup guards
-models/       # PropEngine + player models
-ops/          # Operations utilities
-props/        # Prop pricing logic
-schemas/      # Data schemas
-scripts/      # Executable scripts
-slipforge/    # Slip construction
-sliprisk/     # SlipKelly staking
-stress/       # Variance + stress testing
-templates/    # Input templates
-outputs/      # Generated outputs
-```
-
-## License
-
-MIT
+```text
+blackbox-v3/
+├── frameworks/             # Core Analytics Logic
+│   ├── game_story.py       # Domain II: Narrative Context Engine
+│   ├── three_domain.py     # Pipeline Orchestrator
+│   └── utils.py            # Math helpers (clamp, probability calc)
+├── services/               # Infrastructure Adapters
+│   ├── db.py               # Firebase/Firestore Interface
+│   └── data_fetcher.py     # External API Ingress
+├── bot/                    # Discord Interface
+│   ├── main.py             # Bot Entry Point
+│   └── cogs/               # Command Modules
+├── tests/                  # Unit Tests
+├── docs/                   # Documentation
+├── Dockerfile              # Production Build
+└── requirements.txt        # Dependencies
