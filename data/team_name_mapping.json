@@ -1,0 +1,25 @@
+{
+  "teams": {
+    "ARSENAL": ["Arsenal", "Arsenal FC", "The Gunners"],
+    "MAN_CITY": ["Man City", "Manchester City", "Man. City", "MCFC"],
+    "MAN_UTD": ["Man Utd", "Manchester United", "Man United", "Manchester Utd", "MUFC"],
+    "LIVERPOOL": ["Liverpool", "Liverpool FC", "LFC"],
+    "CHELSEA": ["Chelsea", "Chelsea FC", "CFC"],
+    "SPURS": ["Tottenham", "Tottenham Hotspur", "Spurs", "THFC"],
+    "NEWCASTLE": ["Newcastle", "Newcastle United", "NUFC"],
+    "ASTON_VILLA": ["Aston Villa", "Villa", "AVFC"],
+    "BRIGHTON": ["Brighton", "Brighton & Hove Albion", "Brighton and Hove Albion"],
+    "WEST_HAM": ["West Ham", "West Ham United", "WHUFC"],
+    "EVERTON": ["Everton", "Everton FC", "EFC"],
+    "WOLVES": ["Wolves", "Wolverhampton", "Wolverhampton Wanderers"],
+    "LEICESTER": ["Leicester", "Leicester City", "LCFC"],
+    "FULHAM": ["Fulham", "Fulham FC", "FFC"],
+    "BRENTFORD": ["Brentford", "Brentford FC", "BFC"],
+    "CRYSTAL_PALACE": ["Crystal Palace", "Palace", "CPFC"],
+    "BOURNEMOUTH": ["Bournemouth", "AFC Bournemouth", "AFCB"],
+    "NOTTM_FOREST": ["Nottingham Forest", "Nottm Forest", "NFFC", "Forest"],
+    "LUTON": ["Luton", "Luton Town", "LTFC"],
+    "BURNLEY": ["Burnley", "Burnley FC", "BFC"],
+    "SHEFFIELD_UTD": ["Sheffield United", "Sheffield Utd", "SUFC", "Sheff Utd"]
+  }
+}
