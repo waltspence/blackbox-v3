@@ -1,3 +1,88 @@
 artifacts/*.parq
 artifacts/*.parquet
 __pycache__/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+.sublime/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+PIPFILE.lock
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Testing
+.pytest_cache/
+.coverage
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# IDEs
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Secrets & credentials
+*.pem
+*.key
+*.p12
+service-account.json
+credentials.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+Thumbs.db
+.Spotlight-V100
+.Trashes
