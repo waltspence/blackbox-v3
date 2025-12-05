@@ -1,0 +1,87 @@
+# config/match_protocol.yaml
+
+# BLACKBOX v3 - MATCH PROTOCOL v1.0 CONFIGURATION
+# ------------------------------------------------------------------------------
+
+protocol_settings:
+  # 1. THE FIVE TREES THRESHOLDS (Normalized 0.0 to 1.0 scale)
+  # These determine the "Shape" of the match.
+  thresholds:
+    high_pace: 0.70  # Top 30% percentile for Transition Speed / Low PPDA
+    siege_territory: 0.65  # >65% Field Tilt (Dominant possession in final third)
+    chaos_rating: 0.75  # High volatility (Red card risk, error-prone defense)
+    high_resistance: 0.70  # Low xGA (Expected Goals Against) rating
+
+  # 2. MATCH TYPE DEFINITIONS
+  match_types:
+    TYPE_A: "The Track Meet"  # High Pace + Low/Med Resistance
+    TYPE_B: "The Control Grid"  # High Territory + High Resistance + Low Pace
+    TYPE_C: "Mutual Suppression"  # Low Pace + High Resistance
+    TYPE_D: "The Chaos Window"  # High Volatility + Low Resistance
+    TYPE_E: "The Trap"  # Public Over, System Under (Manual Override usually)
+
+  # 3. THE HARDWARE CHECK (System Keys)
+  # Designations ONLY flip if one of these players is confirmed OUT.
+  # We do NOT flip for generic starters (e.g., Matt Targett).
+  system_keys:
+    - "Erling Haaland"
+    - "Mohamed Salah"
+    - "Rodri"
+    - "Alisson Becker"
+    - "Vinicius Junior"
+    - "Kylian Mbappe"
+    - "Virgil van Dijk"
+    - "Kevin De Bruyne"
+    - "Harry Kane"
+    - "Bukayo Saka"
+    - "William Saliba"
+    - "Thibaut Courtois"
+    - "Jude Bellingham"
+    - "Lamine Yamal"
+    - "Antoine Griezmann"
+    - "Lautaro Martinez"
+    - "Cole Palmer"
+
+  # 4. AUTHORIZED MARKETS (The Vehicle Selection)
+  # The Protocol acts as a strict filter. If a market is not listed here,
+  # the system will NOT calculate Kelly sizing for it.
+  authorized_markets:
+    TYPE_A:  # Track Meet (Goals & Shootouts)
+      - "over_2.5_goals"
+      - "btts_yes"
+      - "asian_total_over_3.0"
+      - "asian_total_over_3.5"
+      - "double_chance_12"  # Either Team to Win (No Draw)
+      - "team_total_over_1.5"  # For the stronger offensive side
+
+    TYPE_B:  # Control Grid (Siege & Domination)
+      - "asian_handicap_-1.5"  # Dominant Win
+      - "asian_handicap_-1.0"  # Push protection
+      - "asian_handicap_-2.0"  # Blowout
+      - "win_to_nil"
+      - "corner_handicap"  # Siege indicator
+      - "team_total_over_1.5"
+      - "team_total_over_2.5"
+
+    TYPE_C:  # Mutual Suppression (The Grind)
+      - "draw_no_bet"  # PRIMARY VEHICLE (Refunds on Draw)
+      - "asian_handicap_0.0"  # Identical to DNB
+      - "double_chance_1x"  # Home or Draw
+      - "double_chance_x2"  # Away or Draw
+      - "asian_handicap_+0.5"  # Double Chance equivalent
+      - "under_2.5_goals"
+      - "asian_total_under_2.0"
+      - "asian_total_under_2.25"
+
+    TYPE_D:  # Chaos Window (Volatility)
+      - "asian_total_over_2.0"  # Safe over
+      - "team_total_over_1.5"  # Fading specific bad defense
+      - "double_chance_12"  # Either Team To Win
+      - "over_1.5_goals"  # Safety parlay piece
+      - "btts_yes"
+
+    TYPE_E:  # The Trap (Fade Public)
+      - "asian_handicap_+1.0"  # Stay Alive (Refund if lose by 1)
+      - "asian_handicap_+0.5"  # Double Chance on Underdog
+      - "under_2.5_goals"
+      - "asian_total_under_3.0"
