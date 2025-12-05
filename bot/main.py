@@ -9,7 +9,41 @@ try:
     from frameworks.three_domain_pipeline import run_pipeline
     from services.data_fetcher import fetch_match_data
     from services.db import save_match_analysis, get_match_analysis, check_exposure
+    from core.match_protocol import MatchProtocolEngine
+
+# Initialize Match Protocol Engine
+match_protocol = MatchProtocolEngine()
 except ImportError:
+
+# ==============================================================================
+# MATCH PROTOCOL v1.0 INTEGRATION EXAMPLE
+# ==============================================================================
+# The Match Protocol should be run BEFORE any betting models to act as a
+# gatekeeper that filters which markets are authorized for calculation.
+#
+# Example Integration Flow:
+# 1. Fetch match data (match_stats, lineups)
+# 2. Run Match Protocol to get designation and authorized markets
+# 3. ONLY calculate probabilities for authorized markets
+# 4. Apply Kelly sizing and execute
+#
+# Sample Code:
+#   protocol_result = match_protocol.run_protocol(
+#       match_stats={'tempo_rating': 0.85, 'field_tilt': 0.5, ...},
+#       home_lineup={'missing_key_players': []},
+#       away_lineup={'missing_key_players': ['Alisson Becker']}
+#   )
+#   
+#   final_type = protocol_result['final_designation']  # e.g., 'TYPE_A'
+#   allowed_markets = protocol_result['authorized_markets']  # e.g., ['over_2.5_goals', 'btts_yes']
+#   
+#   # Now ONLY run probability models on allowed_markets
+#   for market in allowed_markets:
+#       if market == 'over_2.5_goals':
+#           edge = probability_model.calculate_edge(match, market)
+#           if edge > 0.02:  # 2% edge threshold
+#               # Place bet
+# ==============================================================================
     # Placeholder imports for initial deployment
     run_pipeline = None
     fetch_match_data = None
