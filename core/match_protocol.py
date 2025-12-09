@@ -253,3 +253,171 @@ class MatchProtocolEngine:
             ticket['strategy'] = '4-Leg Hybrid (2 Safety + 2 Structural)'
         
         return ticket
+
+    # ========================================
+    # PHASE 6: CONTRARIAN ANALYSIS ENGINE
+    # ========================================
+    
+    def _detect_public_trap(self, match_data, market_type):
+        """
+        Identifies 'Square' plays where public is overloading obvious narratives.
+        
+        Returns contrarian signal strength (0-10).
+        
+        Logic from Gemini:
+        - High public exposure on "obvious" outcomes
+        - Inflated spreads on favorites
+        - Narrative-driven betting (title chases, hat-tricks)
+        """
+        trap_score = 0
+        
+        # Check for inflated favorites (Man City -375 type situations)
+        if 'spread' in match_data and match_data.get('favorite_odds', 0) < -300:
+            trap_score += 3
+            
+        # Check for "guaranteed goals" narratives on BTTS
+        if market_type == 'BTTS':
+            home_form = match_data.get('home_goals_scored_avg', 0)
+            away_form = match_data.get('away_goals_scored_avg', 0)
+            
+            # High-profile attacking teams = public hammers BTTS
+            if home_form > 2.0 and away_form > 2.0:
+                trap_score += 4  # "Track Meet" narrative
+                
+        # Check for title chase narratives
+        if match_data.get('home_league_position', 99) <= 3:
+            trap_score += 2  # Public bets on "must-win" teams
+            
+        return min(trap_score, 10)
+    
+    def _calculate_sharp_alignment(self, match_data, prop_type):
+        """
+        Measures alignment with sharp money indicators.
+        
+        Returns sharp score (0-10).
+        
+        Gemini Sharp Indicators:
+        - Reverse line movement on Unders
+        - Low-scoring elite defenses
+        - Tactical gridlock scenarios
+        """
+        sharp_score = 0
+        
+        # Elite defensive metrics (Arsenal 0.5 goals conceded example)
+        away_defense = match_data.get('away_goals_conceded_avg', 999)
+        home_defense = match_data.get('home_goals_conceded_avg', 999)
+        
+        if prop_type == 'Under' and away_defense < 0.7:
+            sharp_score += 5  # "The Buffer" - elite defense locks
+            
+        # Check for tactical gridlock (low xG environments)
+        if match_data.get('expected_goals_total', 999) < 2.3:
+            sharp_score += 3  # Chess match, not shootout
+            
+        # Home dominance indicators (possession control)
+        if match_data.get('home_possession_avg', 0) > 65:
+            sharp_score += 2  # Controlled game script
+            
+        return min(sharp_score, 10)
+    
+    def _grade_contrarian_value(self, public_trap_score, sharp_score):
+        """
+        Assigns contrarian grade based on Gemini framework.
+        
+        Grades:
+        - A: CONTRARIAN GOLD (Sharp 8+, Public Trap 7+)
+        - B: CONTRARIAN SILVER (Sharp 6+, Public Trap 5+) 
+        - C: MIXED BAG (High public exposure, moderate sharp)
+        - D: SQUARE PLAY (Low sharp, low trap detection)
+        """
+        if sharp_score >= 8 and public_trap_score >= 7:
+            return 'A'  # Villa Under 3.5 example
+        elif sharp_score >= 6 and public_trap_score >= 5:
+            return 'B'
+        elif public_trap_score >= 6:
+            return 'C'  # Man City Over 1.5 - public trap but square
+        else:
+            return 'D'
+    
+    def _rank_by_tier_system(self, analyzed_props):
+        """
+        Implements Gemini's Saturday Master List tier system.
+        
+        TIER 1: THE STRUCTURAL LOCKS (9.5-10/10)
+        - Most stable metrics (Defense, Home Dominance)
+        - Lowest failure rates
+        - "The Buffer" and "The Banker" plays
+        
+        TIER 2: THE SHARP FADES (8-9/10)
+        - Contrarian value on public traps
+        - Elite tactical edges
+        
+        TIER 3: THE CHAOS PLAYS (6-7.5/10)
+        - High variance BTTS
+        - Narrative-dependent outcomes
+        """
+        tier_1 = []  # Structural Locks
+        tier_2 = []  # Sharp Fades  
+        tier_3 = []  # Chaos Plays
+        
+        for prop in analyzed_props:
+            confidence = prop.get('confidence', 0)
+            contrarian_grade = prop.get('contrarian_grade', 'D')
+            
+            # Tier 1: 9.5+ confidence + (Grade A or elite defense)
+            if confidence >= 9.5:
+                if prop.get('sharp_score', 0) >= 8:
+                    tier_1.append(prop)
+                    continue
+                    
+            # Tier 2: 8-9 confidence + Grade A/B contrarian
+            if 8.0 <= confidence < 9.5 and contrarian_grade in ['A', 'B']:
+                tier_2.append(prop)
+                continue
+                
+            # Tier 3: Everything else (BTTS, chaos)
+            tier_3.append(prop)
+        
+        # Sort each tier by confidence
+        tier_1.sort(key=lambda x: x.get('confidence', 0), reverse=True)
+        tier_2.sort(key=lambda x: x.get('confidence', 0), reverse=True)
+        tier_3.sort(key=lambda x: x.get('confidence', 0), reverse=True)
+        
+        return {
+            'tier_1_structural_locks': tier_1,
+            'tier_2_sharp_fades': tier_2,
+            'tier_3_chaos_plays': tier_3
+        }
+    
+    def apply_contrarian_analysis(self, match_data, prop_type):
+        """
+        Master contrarian analysis wrapper.
+        
+        Integrates all contrarian logic from Gemini analysis:
+        1. Public trap detection
+        2. Sharp alignment scoring
+        3. Contrarian grade assignment
+        
+        Returns enriched match data with contrarian metrics.
+        """
+        # Run detection
+        public_trap = self._detect_public_trap(match_data, prop_type)
+        sharp_score = self._calculate_sharp_alignment(match_data, prop_type)
+        contrarian_grade = self._grade_contrarian_value(public_trap, sharp_score)
+        
+        # Enrich match data
+        match_data['public_trap_score'] = public_trap
+        match_data['sharp_alignment_score'] = sharp_score
+        match_data['contrarian_grade'] = contrarian_grade
+        
+        # Add verdict text (Gemini-style)
+        if contrarian_grade == 'A':
+            match_data['verdict'] = 'CONTRARIAN GOLD - Sharp play against public narrative'
+        elif contrarian_grade == 'B':
+            match_data['verdict'] = 'CONTRARIAN SILVER - Good sharp alignment'
+        elif contrarian_grade == 'C':
+            match_data['verdict'] = 'MIXED BAG - High public exposure'
+        else:
+            match_data['verdict'] = 'SQUARE PLAY - Paying top dollar for obvious outcome'
+            
+        return match_data
