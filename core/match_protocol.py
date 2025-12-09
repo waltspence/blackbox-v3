@@ -132,3 +132,124 @@ class MatchProtocolEngine:
         Returns the strict list of authorized markets for the designation.
         """
         return self.settings['authorized_markets'].get(match_type, [])
+
+    def build_hybrid_ticket(self, matches_data, max_legs=4):
+        """
+        PHASE 5: HYBRID TICKET CONSTRUCTION
+        Mixes "Safety" buffers (Over/Under goals) with "Structural" locks (BTTS)
+        to create tickets with +140 to +400 potential.
+        
+        Strategy:
+        - Safety legs: Over/Under goals (handles most likely outcomes)
+        - Structural legs: BTTS on Type A "Track Meet" matches
+        - Anchor leg: BTTS on highest probability Type A match
+        
+        Args:
+            matches_data: List of dicts with match info and protocol results
+            max_legs: Maximum number of legs in ticket (default 4)
+        
+        Returns:
+            Dict with ticket structure and estimated odds
+        """
+        safety_legs = []
+        structural_legs = []
+        
+        # Identify legs by category
+        for match in matches_data:
+            match_type = match.get('final_designation')
+            fixture = match.get('fixture')
+            
+            # Safety Buffer: Over/Under goals for defensive teams
+            if match_type in ['TYPE_B', 'TYPE_C']:
+                # Arsenal/City (defensive strength) -> Under 3.5
+                if any(team in fixture for team in ['Arsenal', 'Man City']):
+                    safety_legs.append({
+                        'fixture': fixture,
+                        'selection': 'Under 3.5 Goals',
+                        'logic': 'The Buffer. Defensive strength guarantees low ceiling.'
+                    })
+                # Sunderland (weak attack) -> Over 1.5
+                elif 'Sunderland' in fixture:
+                    safety_legs.append({
+                        'fixture': fixture,
+                        'selection': 'Over 1.5 Goals',
+                        'logic': 'The Safety. Covers likely outcomes (2-0 or 1-1).'
+                    })
+            
+            # Structural Lock: BTTS for Type A "Track Meet"
+            elif match_type == 'TYPE_A':
+                # Track Meet profile: High pace + weak defenses
+                if self._is_btts_candidate(match):
+                    structural_legs.append({
+                        'fixture': fixture,
+                        'selection': 'BTTS - YES',
+                        'logic': 'The Anchor. Track Meet guarantees both teams score.',
+                        'confidence': match.get('btts_confidence', 'High')
+                    })
+        
+        # Build ticket with mix of safety and structural
+        ticket = self._construct_ticket(safety_legs, structural_legs, max_legs)
+        
+        return ticket
+    
+    def _is_btts_candidate(self, match):
+                """
+        Determines if a Type A match qualifies for BTTS based on:
+        - Chelsea defense is "High Risk" (leaky)
+        - Bournemouth at home is relentless (attacking)
+        - Both teams have attacking quality (Isak, Salah for Liverpool)
+        """
+        fixture = match.get('fixture', '')
+        trees = match.get('trees', {})
+        
+        # Track Meet profile criteria
+        high_pace = trees.get('tempo', 0) >= 0.7
+        low_resistance = trees.get('resistance', 1.0) < 0.5
+        both_create = trees.get('creation', 0) >= 0.6
+        
+        # Specific team patterns from Gemini analysis
+        btts_fixtures = [
+            ('Chelsea', 'Bournemouth'),  # Chelsea leaky defense + Bournemouth home
+            ('Leeds', 'Liverpool'),      # Leeds scoring + Liverpool attack (Isak/Salah)
+        ]
+        
+        # Check if fixture matches BTTS criteria
+        for team_a, team_b in btts_fixtures:
+            if team_a in fixture and team_b in fixture:
+                return True
+        
+        # General Track Meet with creation
+        if high_pace and low_resistance and both_create:
+            return True
+        
+        return False
+    
+    def _construct_ticket(self, safety_legs, structural_legs, max_legs):
+        """
+        Constructs final ticket by mixing safety and structural legs.
+        
+        Rules from Gemini conversation:
+        - Use 2 safety legs + 1 anchor leg for 3-legger
+        - Use 2 safety + 2 structural for 4-legger
+        - Anchor = highest confidence BTTS
+        - Estimated odds: +140 to +400 range
+        """
+        ticket = {'legs': [], 'strategy': 'Hybrid', 'estimated_odds_range': '+140 to +400'}
+        
+        # Sort structural legs by confidence
+        structural_legs.sort(key=lambda x: x.get('confidence', 'Low'), reverse=True)
+        
+        if max_legs == 3:
+            # 3-Leg Hybrid: 2 Safety + 1 Anchor
+            ticket['legs'].extend(safety_legs[:2])
+            if structural_legs:
+                ticket['legs'].append(structural_legs[0])  # Highest confidence BTTS
+            ticket['strategy'] = '3-Leg Hybrid (2 Safety + 1 Anchor)'
+        
+        elif max_legs == 4:
+            # 4-Leg Hybrid: 2 Safety + 2 Structural
+            ticket['legs'].extend(safety_legs[:2])
+            ticket['legs'].extend(structural_legs[:2])
+            ticket['strategy'] = '4-Leg Hybrid (2 Safety + 2 Structural)'
+        
+        return ticket
