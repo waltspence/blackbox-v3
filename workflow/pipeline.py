@@ -1,237 +1,208 @@
-"""BlackBox v3.1 Pipeline - 7-Phase Workflow Orchestrator
+# src/workflow/pipeline.py
 
-Executes the complete Saturday ticket generation workflow:
-Phase 1-2: Monthly Context Overlay
-Phase 3: Match Protocol v1.0 Application  
-Phase 4: Hybrid Ticket Construction
-Phase 5: Contrarian Analysis Engine
-Phase 6: Tier Ranking & Constitution Enforcement
-Phase 7: Output Generation
-"""
-
+from typing import Dict, List, Optional
 from datetime import datetime
-from typing import List, Dict, Any
-from dataclasses import dataclass
+from src.core.constitution import BlackBoxConstitution, BetType
+from src.analysis.monthly_context import MonthlyContextAnalyzer
+from src.analysis.contrarian import ContrarianEngine
+# CRITICAL: Ensure src/core/match_protocol.py exists and has the diagnose_match method
+from src.core.match_protocol import MatchProtocol 
 
-from core.constitution import BlackBoxConstitution, BetType
-from analysis.monthly_context import MonthlyContextAnalyzer
-from analysis.contrarian import ContrarianEngine, ContrarianGrade
-
-
-@dataclass
-class MatchData:
-    """Minimal match data structure for pipeline testing."""
-    home_team: str
-    away_team: str
-    league: str
-    kickoff: str
-    
-
-@dataclass
-class BetProposal:
-    """Proposed bet before Constitution enforcement."""
-    match: MatchData
-    bet_type: BetType
-    selection: str
-    confidence: float
-    reasoning: str
-    
-
-@dataclass
-class FinalBet:
-    """Validated bet after Constitution + Contrarian + Tier assignment."""
-    match: MatchData
-    bet_type: BetType
-    selection: str
-    confidence: float
-    reasoning: str
-    contrarian_grade: ContrarianGrade
-    tier: int
-    label: str  # "The Buffer", "The Safety", "The Anchor"
-    
+# ==============================================================================
+# 🔐 AUTHORIZED MARKET MAPPING (Phase 4 Logic)
+# Defines strictly which vehicles are allowed for each tactical profile.
+# ==============================================================================
+AUTHORIZED_MARKETS = {
+    "TYPE_A": [BetType.TOTAL_OVER, BetType.BTTS, BetType.SPREAD],
+    "TYPE_B": [BetType.MONEYLINE, BetType.SPREAD, BetType.TOTAL_OVER],
+    "TYPE_C": [BetType.TOTAL_UNDER, BetType.DOUBLE_CHANCE], # Result bets banned by Constitution later
+    "TYPE_D": [BetType.BTTS, BetType.TOTAL_OVER],
+    "TYPE_E": [BetType.TOTAL_UNDER, BetType.SPREAD] # Trap games
+}
 
 class BlackBoxPipeline:
-    """7-Phase Saturday Workflow Orchestrator."""
-    
+    """
+    The Orchestrator.
+    Enforces the strict 7-Phase Workflow for every match analysis.
+    """
+
     def __init__(self):
         self.constitution = BlackBoxConstitution()
-        self.monthly_analyzer = MonthlyContextAnalyzer()
-        self.contrarian_engine = ContrarianEngine()
+        self.monthly_analyzer = MonthlyContextAnalyzer(datetime.now())
+        self.contrarian = ContrarianEngine()
+        self.match_protocol = MatchProtocol()
+
+    def execute_match_workflow(self, match_data: Dict) -> Dict:
+        """
+        Executes the full BlackBox v3.1 decision tree.
+        Phase 1 (Scan) is assumed complete before calling this.
+        """
+        fixture_name = match_data.get('fixture', 'Unknown Fixture')
+        print(f"🚀 STARTING WORKFLOW FOR: {fixture_name}")
+
+        # =====================================================
+        # PHASE 2: MONTHLY CONTEXT (Mandatory)
+        # =====================================================
+        # Ensure logs exist and extract monthly data
+        home_logs = match_data.get('home_logs', [])
+        away_logs = match_data.get('away_logs', [])
         
-    def execute_match_workflow(self, matches: List[MatchData]) -> Dict[str, Any]:
-        """Run complete 7-phase workflow on Saturday fixtures."""
-        narrative = []
-        narrative.append("=" * 60)
-        narrative.append("🎯 BLACKBOX SATURDAY WORKFLOW - 7 PHASES")
-        narrative.append("=" * 60)
-        narrative.append("")
+        home_ctx = self.monthly_analyzer.get_monthly_context(match_data['home_id'], home_logs)
+        away_ctx = self.monthly_analyzer.get_monthly_context(match_data['away_id'], away_logs)
         
-        # PHASE 1-2: Monthly Context Overlay
-        narrative.append("📊 PHASE 1-2: MONTHLY CONTEXT OVERLAY")
-        monthly_context = {}
-        for match in matches:
-            home_ctx = self.monthly_analyzer.get_december_form(match.home_team)
-            away_ctx = self.monthly_analyzer.get_december_form(match.away_team)
-            monthly_context[f"{match.home_team} vs {match.away_team}"] = {
-                'home': home_ctx,
-                'away': away_ctx
-            }
-            narrative.append(f"  ✓ {match.home_team}: {home_ctx}")
-            narrative.append(f"  ✓ {match.away_team}: {away_ctx}")
-        narrative.append("")
+        # Output the mandatory monthly narrative
+        narrative = self.monthly_analyzer.generate_narrative(home_ctx, away_ctx)
+        print(narrative)
+
+        # =====================================================
+        # PHASE 3: PROTOCOL DIAGNOSIS
+        # =====================================================
+        # Pass monthly context into the protocol for smarter diagnosis
+        # NOTE: MatchProtocol.diagnose_match must be updated to accept context
+        match_type_result = self.match_protocol.diagnose_match(match_data, home_ctx, away_ctx)
         
-        # PHASE 3: Match Protocol v1.0 Application
-        narrative.append("🔍 PHASE 3: MATCH PROTOCOL v1.0 APPLICATION")
-        narrative.append("  [Diagnostic tree execution - to be integrated with core/match_protocol.py]")
-        match_types = self._run_protocol_tree(matches)
-        narrative.append("")
+        # Handle if result is complex object or string
+        match_type = match_type_result.get('type') if isinstance(match_type_result, dict) else match_type_result
+        print(f"📍 DIAGNOSIS: {match_type}")
+
+        # =====================================================
+        # PHASE 4: TICKET CONSTRUCTION
+        # =====================================================
+        # Generate potential bets based on the Match Type map
+        potential_bets = self._get_authorized_bets(match_type, match_data)
         
-        # PHASE 4: Hybrid Ticket Construction
-        narrative.append("🎟️ PHASE 4: HYBRID TICKET CONSTRUCTION")
-        bet_proposals = self._get_authorized_bets(matches, match_types, monthly_context)
-        narrative.append(f"  Generated {len(bet_proposals)} initial bet proposals")
-        narrative.append("")
-        
-        # PHASE 5: Contrarian Analysis Engine
-        narrative.append("⚡ PHASE 5: CONTRARIAN ANALYSIS ENGINE")
-        graded_bets = []
-        for prop in bet_proposals:
-            grade = self.contrarian_engine.grade_bet(
-                bet_type=prop.bet_type,
-                selection=prop.selection,
-                confidence=prop.confidence,
-                public_heavy=True,
-                sharp_fade=True
+        if not potential_bets:
+            print("⚠️ NO AUTHORIZED MARKETS FOUND. Skipping match.")
+            return None
+
+        # =====================================================
+        # PHASE 5: CONTRARIAN CHECK
+        # =====================================================
+        graded_picks = []
+        for bet in potential_bets:
+            # Detect traps and sharp action
+            grade = self.contrarian.analyze_prop(
+                odds=bet['odds'], 
+                ticket_pct=bet.get('ticket_pct', 50), 
+                money_pct=bet.get('money_pct', 50)
             )
-            graded_bets.append((prop, grade))
-            narrative.append(f"  {prop.selection}: {grade.letter_grade} (Sharp:{grade.sharp_alignment}/10, Trap:{grade.public_trap_score}/10)")
-        narrative.append("")
+            bet['grade'] = grade
+            graded_picks.append(bet)
+
+        # =====================================================
+        # PHASE 6: CONSTITUTIONAL REVIEW & TIER RANKING
+        # =====================================================
+        final_approved_picks = []
         
-        # PHASE 6: Constitution Enforcement + Tier Ranking
-        narrative.append("⚖️ PHASE 6: CONSTITUTION ENFORCEMENT + TIER RANKING")
-        final_bets = []
-        for prop, grade in graded_bets:
-            is_valid, reason = self.constitution.check_bet(
-                bet_type=prop.bet_type,
-                match_context={
-                    'home_team': prop.match.home_team,
-                    'away_team': prop.match.away_team,
-                    'match_type': 'Type A',
-                    'is_crisis': False
-                },
-                parlay_leg_count=3
-            )
-            
-            if not is_valid:
-                narrative.append(f"  ❌ BLOCKED: {prop.selection} - {reason}")
+        for bet in graded_picks:
+            # 1. Check Crisis Law (Ban Unders for crisis teams)
+            if not self.constitution.check_crisis_law(home_ctx, bet['type']):
+                continue
+            if not self.constitution.check_crisis_law(away_ctx, bet['type']):
+                continue
+
+            # 2. Check Suppression Law (Ban Result bets for Type C)
+            if not self.constitution.check_suppression_law(match_type, bet['type']):
+                continue
+
+            # 3. Check Parlay Cap (This is typically done at ticket level, but check single bet safety here)
+            # (Skipped for single prop analysis)
+
+            # 4. Check Matrix Law (if matrix data exists)
+            if 'matrix' in match_data and not self.constitution.check_matrix_law(match_data['matrix'], bet['type']):
                 continue
                 
-            tier = self._assign_tier(grade, prop.confidence)
-            label = self._assign_label(tier, len(final_bets))
-            
-            final_bet = FinalBet(
-                match=prop.match,
-                bet_type=prop.bet_type,
-                selection=prop.selection,
-                confidence=prop.confidence,
-                reasoning=prop.reasoning,
-                contrarian_grade=grade,
-                tier=tier,
-                label=label
-            )
-            final_bets.append(final_bet)
-            narrative.append(f"  ✅ Tier {tier}: {prop.selection} [{label}]")
-        narrative.append("")
+            # If passed all laws, add to final list
+            final_approved_picks.append(bet)
+
+        # =====================================================
+        # PHASE 7: OUTPUT GENERATION
+        # =====================================================
+        # Sort by Contrarian Grade Score (A > B > C > D)
+        sorted_picks = sorted(final_approved_picks, key=lambda x: x['grade'].score, reverse=True)
+
+        output = {
+            "fixture": fixture_name,
+            "match_type": match_type,
+            "monthly_context": {
+                "home": home_ctx,
+                "away": away_ctx
+            },
+            "picks": sorted_picks
+        }
         
-        # PHASE 7: Output Generation
-        narrative.append("📋 PHASE 7: OUTPUT GENERATION")
-        output = self._generate_output(final_bets, narrative)
-        
+        self._print_verdict(output)
         return output
-        
-    def _run_protocol_tree(self, matches: List[MatchData]) -> Dict[str, str]:
-        """Phase 3: Run Match Protocol v1.0 diagnostic tree."""
-        return {f"{m.home_team} vs {m.away_team}": "Type A" for m in matches}
-        
-    def _get_authorized_bets(self, matches: List[MatchData], 
-                            match_types: Dict[str, str],
-                            monthly_context: Dict[str, Any]) -> List[BetProposal]:
-        """Phase 4: Build hybrid ticket with Safety + Anchor structure."""
-        proposals = []
-        for match in matches[:3]:
-            proposals.append(BetProposal(
-                match=match,
-                bet_type=BetType.UNDER,
-                selection=f"{match.home_team} vs {match.away_team} Under 2.5",
-                confidence=8.5,
-                reasoning="Mock reasoning - low xG expected"
-            ))
-        return proposals
-        
-    def _assign_tier(self, grade: ContrarianGrade, confidence: float) -> int:
-        """Assign tier based on contrarian grade and confidence."""
-        if grade.letter_grade == 'A' and confidence >= 9.5:
-            return 1
-        elif grade.letter_grade in ['A', 'B'] and confidence >= 8.0:
-            return 2
-        else:
-            return 3
-            
-    def _assign_label(self, tier: int, position: int) -> str:
-        """Assign Buffer/Safety/Anchor label."""
-        if tier == 1 and position == 0:
-            return "The Buffer"
-        elif tier == 2:
-            return "The Safety"
-        else:
-            return "The Anchor"
-            
-    def _generate_output(self, final_bets: List[FinalBet], narrative: List[str]) -> Dict[str, Any]:
-        """Phase 7: Generate final output with rankings and ticket structure."""
-        sorted_bets = sorted(final_bets, key=lambda b: (b.tier, -b.confidence))
-        
-        master_list = []
-        for bet in sorted_bets:
-            master_list.append({
-                'tier': bet.tier,
-                'label': bet.label,
-                'selection': bet.selection,
-                'confidence': bet.confidence,
-                'grade': bet.contrarian_grade.letter_grade,
-                'reasoning': bet.reasoning
-            })
-            
-        ticket_structure = {
-            'legs': [b['selection'] for b in master_list[:3]],
-            'estimated_odds': '+250',
-            'structure': '2 Safety + 1 Anchor'
-        }
-        
-        narrative.append("")
-        narrative.append("✅ WORKFLOW COMPLETE")
-        narrative.append(f"   {len(final_bets)} bets passed all checks")
-        narrative.append("=" * 60)
-        
-        return {
-            'master_list': master_list,
-            'ticket_structure': ticket_structure,
-            'narrative': '\n'.join(narrative),
-            'timestamp': datetime.now().isoformat()
-        }
 
+    def _get_authorized_bets(self, match_type: str, match_data: Dict) -> List[Dict]:
+        """
+        Generates the raw bet objects based on the AUTHORIZED_MARKETS map.
+        Extracts available odds from match_data.
+        """
+        allowed_types = AUTHORIZED_MARKETS.get(match_type, [])
+        generated_bets = []
 
-if __name__ == "__main__":
-    pipeline = BlackBoxPipeline()
-    
-    saturday_matches = [
-        MatchData("Arsenal", "Manchester United", "EPL", "12:30 EST"),
-        MatchData("Sheffield Utd", "Norwich", "Championship", "15:00 EST"),
-        MatchData("Torino", "AC Milan", "Serie A", "14:00 EST"),
-    ]
-    
-    result = pipeline.execute_match_workflow(saturday_matches)
-    print(result['narrative'])
-    print("\n📊 MASTER LIST:")
-    for bet in result['master_list']:
-        print(f"  Tier {bet['tier']} [{bet['label']}]: {bet['selection']} - Grade {bet['grade']}")
-    print(f"\n🎟️ RECOMMENDED TICKET: {result['ticket_structure']}")
+        # Assumes match_data['markets'] contains standard keys
+        markets = match_data.get('markets', {})
+
+        for bet_type in allowed_types:
+            
+            if bet_type == BetType.MONEYLINE and 'moneyline_home' in markets:
+                generated_bets.append({
+                    "type": BetType.MONEYLINE,
+                    "selection": match_data.get('home_team', 'Home Team'),
+                    "odds": markets['moneyline_home'],
+                    "ticket_pct": markets.get('ml_ticket_pct', 50),
+                    "money_pct": markets.get('ml_money_pct', 50)
+                })
+            
+            elif bet_type == BetType.TOTAL_OVER and 'total_over_2_5' in markets:
+                 generated_bets.append({
+                    "type": BetType.TOTAL_OVER,
+                    "selection": "Over 2.5",
+                    "odds": markets['total_over_2_5'],
+                    "line": 2.5,
+                    "ticket_pct": markets.get('over_ticket_pct', 50),
+                    "money_pct": markets.get('over_money_pct', 50)
+                })
+
+            elif bet_type == BetType.TOTAL_UNDER and 'total_under_2_5' in markets:
+                 generated_bets.append({
+                    "type": BetType.TOTAL_UNDER,
+                    "selection": "Under 2.5",
+                    "odds": markets['total_under_2_5'],
+                    "line": 2.5,
+                    "ticket_pct": markets.get('under_ticket_pct', 50),
+                    "money_pct": markets.get('under_money_pct', 50)
+                })
+            
+            elif bet_type == BetType.BTTS and 'btts_yes' in markets:
+                generated_bets.append({
+                    "type": BetType.BTTS,
+                    "selection": "BTTS - Yes",
+                    "odds": markets['btts_yes'],
+                    "ticket_pct": markets.get('btts_ticket_pct', 50),
+                    "money_pct": markets.get('btts_money_pct', 50)
+                })
+                
+            # Add spread logic here if data available
+
+        return generated_bets
+
+    def _print_verdict(self, output: Dict):
+        """
+        Helper to visualize the result in the console.
+        """
+        print(f"\n📋 FINAL VERDICT FOR {output['fixture']}")
+        print(f"   Match Type: {output['match_type']}")
+        
+        if not output['picks']:
+            print("   ⛔ NO PLAYABLE BETS FOUND (Constitution Rejected All)")
+            return
+
+        print("   ✅ Approved Picks:")
+        for pick in output['picks']:
+            grade_info = pick['grade']
+            print(f"      - {pick['selection']} ({pick['odds']})")
+            print(f"        Grade: {grade_info.grade} | Score: {grade_info.score:.1f} | {grade_info.verdict}")
+        print("-" * 60)
