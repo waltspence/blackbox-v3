@@ -344,6 +344,119 @@ The Gemini AI conversation sessions served as excellent design documentation and
 
 **No urgent action items identified.** The system is ready for deployment and can handle live betting operations.
 
+
+## #8. Suppressive Script Prop Betting Module (NEW)
+**Location:** `frameworks/suppressive_script_props.py`  
+**Status:** ✅ COMPLETE  
+**Last Updated:** December 23, 2025
+
+**Implements:** Draw prop betting signals for games with defensive/suppressive tactics.
+
+### Key Features:
+
+**1. Suppression Detection Algorithm**
+   - Power imbalance analysis (underdog vs favorite)
+   - League position gap calculation (8+ positions = significant)
+   - Motivation assessment (dead rubber, survival mode, avoid defeat)
+   - Historical scoring tendencies (low-scoring teams)
+   - Weather-induced defensive play
+   - Away team natural defensiveness
+
+**2. Draw Prop Signal Generation**
+   - Generates signals for 4 time intervals: 10', 20', 40', 60' minutes
+   - Base probabilities calibrated from historical match data:
+     - 10 minutes: 65% base draw probability
+     - 20 minutes: 52% base draw probability  
+     - 40 minutes: 38% base draw probability (halftime)
+     - 60 minutes: 28% base draw probability
+   - Suppression score amplifies probabilities (+20% max)
+   - Confidence decreases with time progression
+
+**3. Edge Calculation & Stake Sizing**
+   - Estimates edge vs market pricing
+   - Fractional Kelly criterion for stake sizing (0.25 Kelly default)
+   - Maximum stake capped at 5% of bankroll
+   - Filters signals: requires >3% probability boost AND >2% estimated edge
+
+**4. Tactical Reasoning System**
+   - Human-readable flag generation:
+     - `away_underdog_defensive` - Away team parking the bus
+     - `home_underdog_defensive` - Home team defensive against favorite
+     - `both_teams_dead_rubber` - No motivation scenario
+     - `away_survival_mode` - Relegation battle defensiveness
+     - `both_low_scoring_teams` - Historical low xG
+     - `defensive_weather_[condition]` - Weather impact
+     - `major_position_gap_[N]` - League table gap
+
+### Data Structures:
+
+```python
+DrawPropSignal:
+    minute_mark: int  # 10, 20, 40, or 60
+    probability: float  # Estimated P(draw at time)
+    confidence: float  # Signal confidence (0-1)
+    edge: float  # vs market
+    reasons: List[str]  # Tactical reasoning
+
+SuppressiveScriptAnalysis:
+    is_suppressive: bool  # Threshold: score >= 0.50
+    suppression_score: float  # 0-1 composite score
+    suppressing_team: str  # 'home', 'away', or 'both'
+    draw_props: List[DrawPropSignal]
+    tactical_flags: List[str]
+```
+
+### Usage Example:
+
+```python
+from frameworks.suppressive_script_props import SuppressiveScriptEngine
+
+engine = SuppressiveScriptEngine()
+analysis = engine.analyze(game_data, domain_i_prob=0.70)
+
+if analysis.is_suppressive:
+    print(f"Suppression Score: {analysis.suppression_score:.2f}")
+    print(f"Suppressing Team: {analysis.suppressing_team}")
+    
+    # Get actionable recommendations
+    recs = engine.get_recommendations(analysis, min_confidence=0.60)
+    for rec in recs:
+        print(f"\nMarket: {rec['market']}")
+        print(f"Probability: {rec['probability']:.1%}")
+        print(f"Edge: {rec['estimated_edge']:.1%}")
+        print(f"Stake: {rec['stake_suggestion']:.1%} of bankroll")
+        print(f"Reasoning: {rec['reasoning']}")
+```
+
+### Test Coverage:
+
+**Location:** `tests/test_suppressive_script_props.py`  
+**Test Cases:** 15 comprehensive scenarios
+
+- ✅ Underdog defensive detection (home/away)
+- ✅ Dead rubber scenario (both teams)
+- ✅ Away survival mode
+- ✅ Low-scoring team tendencies  
+- ✅ Weather-induced defensive play
+- ✅ Draw prop signal generation at all 4 time marks
+- ✅ Probability hierarchy (early > late)
+- ✅ Balanced game non-triggering
+- ✅ Position gap threshold
+- ✅ Recommendation generation
+- ✅ Kelly stake calculation
+- ✅ Suppression score clamping [0, 1]
+
+### Integration Points:
+
+**Game Story Module:** Can be called after Domain I analysis to supplement main predictions with prop opportunities.
+
+**Match Protocol:** Discord bot can display draw prop signals when suppressive scripts are detected.
+
+**Constitution Engine:** Draw props are independent bets, not correlated with match winner - safe for bankroll diversification.
+
+**Purpose:** Exploits market inefficiencies in time-based draw props for defensive matches. Sportsbooks often misprice early draw probabilities in suppressive script scenarios.
+
+---
 ---
 
 **Review Completed:** 2025-12-23 16:00 EST  
