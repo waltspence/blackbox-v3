@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**Date:** December 19, 2025
+**Date:** December 24, 2025
 
 **Status:** ✅ ALL CRITICAL COMPONENTS IMPLEMENTED
 
@@ -532,6 +532,59 @@ python scripts/price_team_props.py data/players.csv data/team_props.csv
 
 ---
 
-**Review Completed:** 2025-12-19 20:00 EST (Updated with Soccer Props Expansion)
+## Module #10: Parlay Construction Safety (No Anchor Policy)
+**Location:** `guards/no_anchor_policy_v1_2.yaml`, `slipforge/composer.py`
+**Status:** ✅ COMPLETE
+**Last Updated:** 2025-12-24 01:00 EST
+
+**Implements:**
+
+- ✅ **No Anchor Policy Enforcement**: Evaluates legs against BCFI (Big Club Fade Index) thresholds to prevent trap games in parlays
+- ✅ **Asian Handicap Escape Hatch**: When Money Line favorites are forbidden, allows safe Asian Handicap spreads as alternatives
+- ✅ **BCFI-Based Risk Detection**: Identifies high-risk situations based on fatigue, motivation, and opponent style
+- ✅ **Policy Violation Tracking**: Logs dropped legs with specific reasons for safety compliance
+
+**Summary:**
+
+Implements the No Anchor Policy with Asian Handicap Escape Hatch for safe parlay construction. When BCFI triggers risk detection, the system:
+
+1. **Elite Away Fade** (BCFI >= 0.58, Away): Forbids Money Line, allows Asian Handicap +1.5 or better
+2. **Elite Home Fade** (BCFI >= 0.60, Home): Forbids Money Line, allows Asian Handicap +1.0 or better (safer home context)
+3. **Deep Block Trap**: For opponents playing deep block with low motivation, requires AH +1.5 minimum
+
+The Asian Handicap escape hatch provides parlay legs with minimal risk since the favorite must lose by 2+ goals to bust the bet.
+
+**Technical Details:**
+
+- Policy rules defined in YAML with conditional logic and escape hatch thresholds
+- `check_safety_policy()` function evaluates each leg before combination generation
+- Filters legs in `slipforge/composer.py` before itertools.combinations
+- Tracks approved legs with policy notes and dropped legs with violation reasons
+- Supports future YAML-based policy loading for dynamic rule updates
+
+**Integration:**
+
+- Works with BCFI scores from `rubrics/bcfi_v0_2.yaml`
+- Integrates with existing slipforge parlay generation pipeline
+- Compatible with guard_ok() lineup/injury filtering
+- Outputs both approved slips and dropped legs report
+
+**Usage:**
+```bash
+# Requires BCFI scores pre-calculated
+python slipforge/composer.py --legs data/candidate_legs.json --bcfi outputs/bcfi_scores.json --out outputs/safe_slips.json
+```
+
+**US Market Notes:**
+
+- Asian Handicap often listed as "Alternative Spread" on FanDuel/DraftKings
+- +1.5 spreads widely available across all major US books
+- +1.0 spreads less common, use +1.5 as safer alternative
+- Policy prevents "trap game" parlays that look safe but carry hidden risk
+
+---
+
+**Review Completed:** 2025-12-24 01:00 EST (Updated with Parlay Construction Safety)
+
 **Confidence Level:** HIGH (Comprehensive cross-reference analysis completed)  
 **Repository Health:** EXCELLENT ✅
