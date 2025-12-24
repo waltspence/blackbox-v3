@@ -460,5 +460,78 @@ if analysis.is_suppressive:
 ---
 
 **Review Completed:** 2025-12-23 16:00 EST  
+
+---
+
+## Module #9: Soccer Props Expansion (US Market)
+**Location:** `scripts/price_props.py`, `scripts/price_team_props.py`  
+**Status:** ✅ COMPLETE  
+**Last Updated:** Just now
+
+**Implements:**
+- ✅ Player Goals (Anytime/First) - Universal availability (all US books)
+- ✅ Player Assists - Widely available (FanDuel/DraftKings/BetMGM)
+- ✅ Player Passes - Limited (Bet365)
+- ✅ BTTS (Both Teams To Score) - Universal availability
+- ✅ Team Total Goals (Over/Under) - Universal availability
+
+**Summary:**
+Implements Phase 1-3 of the US market-focused soccer props expansion based on Gemini's gap analysis recommendations. Adds five critical prop markets prioritized by US sportsbook availability:
+
+1. **Player Goals** (`price_props.py`): Uses `xg_per90` with Poisson distribution to price anytime goalscorer and first goalscorer markets. Universal availability across FanDuel, DraftKings, BetMGM, Caesars.
+
+2. **Player Assists** (`price_props.py`): Estimates expected assists from `xa_per90` or derives from `passes_per90 * 0.03` conversion rate. Widely available on major US books.
+
+3. **Player Passes** (`price_props.py`): Activates dormant `passes_per90` data already loaded in the system. Limited to Bet365 but ready for expansion.
+
+4. **BTTS - Both Teams To Score** (`price_team_props.py`): Aggregates player-level xG to team totals, applies correlation adjustment for independence assumption. Critical for Same Game Parlays (SGP) - primary driver of US sportsbook volume.
+
+5. **Team Total Goals** (`price_team_props.py`): Prices home/away team goal totals (over/under) at configurable lines (e.g., 1.5, 2.5). Universal availability.
+
+**Technical Details:**
+- Player props use existing Poisson distribution framework from shots/SOG models
+- Team props introduce new `aggregate_team_xg()` function to derive team-level expected goals
+- BTTS applies negative correlation adjustment (default 0.15) for realistic probability
+- All implementations follow existing VLE (Value Line Edge) calculation methodology
+- Output to `outputs/priced_legs.json` and `outputs/priced_team_props.json`
+
+**Data Requirements:**
+- `xg_per90`: Already loaded - Used for player goals
+- `passes_per90`: Already loaded - Used for player passes and assists estimation
+- `xa_per90`: Optional enhancement for more accurate assist pricing
+- Team-level data: Derived from player aggregation (no new data required)
+
+**Market Priority Justification:**
+Prioritized based on:
+1. US sportsbook availability (FanDuel/DraftKings/BetMGM/Caesars primary)
+2. Same Game Parlay (SGP) compatibility
+3. Data readiness (xg_per90, passes_per90 already in system)
+4. Implementation complexity vs. ROI
+
+**Integration:**
+- Compatible with existing `guard_ok()` lineup/injury filtering
+- Uses standard tempo_adj, usage_adj multipliers
+- Follows existing output schema for consistency
+- Can be called independently or integrated into main pricing pipeline
+
+**Usage:**
+```bash
+# Player props (goals, assists, passes)
+python scripts/price_props.py data/players.csv data/legs.csv
+
+# Team props (BTTS, team totals)
+python scripts/price_team_props.py data/players.csv data/team_props.csv
+```
+
+**Future Enhancements:**
+- Add `xa_per90` to player CSV for precise assist modeling
+- Implement Team Corners (requires new corner rate data)
+- Add Player Fouls/Cards (Bet365 only, requires fouls_per90 data)
+- Apply Gaussian Copula correlation for SGP bundling
+- First/Last goalscorer differentiation (requires positional adjustments)
+
+---
+
+**Review Completed:** 2025-12-19 20:00 EST (Updated with Soccer Props Expansion)
 **Confidence Level:** HIGH (Comprehensive cross-reference analysis completed)  
 **Repository Health:** EXCELLENT ✅
