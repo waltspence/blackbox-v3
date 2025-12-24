@@ -166,6 +166,27 @@ def main(players_csv, team_props_csv):
                     dropped.append({"leg_id": row["leg_id"], "reason": "missing_line"})
                     continue
                 p_model = price_team_total(away_xg, line, over=False)
+                            elif market == "home_corners_over" or market == "away_corners_over":
+                # Team corners - requires corners data. Estimate from pressure/possession
+                # Note: Corners data not currently in schema. Placeholder for future implementation
+                if line is None:
+                    dropped.append({"leg_id": row["leg_id"], "reason": "missing_line"})
+                    continue
+                # Estimate: ~5 corners per team per game baseline, adjusted by xG dominance
+                team_xg = home_xg if "home" in market else away_xg
+                opp_xg = away_xg if "home" in market else home_xg
+                xg_ratio = team_xg / (team_xg + opp_xg) if (team_xg + opp_xg) > 0 else 0.5
+                corners_expected = 5.0 * (1 + 0.5 * (xg_ratio - 0.5))  # Adjust from baseline
+                p_model = price_team_total(corners_expected, line, over=True)
+            elif market == "home_corners_under" or market == "away_corners_under":
+                if line is None:
+                    dropped.append({"leg_id": row["leg_id"], "reason": "missing_line"})
+                    continue
+                team_xg = home_xg if "home" in market else away_xg
+                opp_xg = away_xg if "home" in market else home_xg
+                xg_ratio = team_xg / (team_xg + opp_xg) if (team_xg + opp_xg) > 0 else 0.5
+                corners_expected = 5.0 * (1 + 0.5 * (xg_ratio - 0.5))
+                p_model = price_team_total(corners_expected, line, over=False)
             else:
                 dropped.append({"leg_id": row["leg_id"], "reason": "unsupported_market"})
                 continue
