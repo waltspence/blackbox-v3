@@ -60,6 +60,7 @@ def load_players(path):
                 "oncourt_usage": float(row["oncourt_usage"]) if row["oncourt_usage"] else None,
                 "injury_status": row["injury_status"].strip().lower(),
                 "lineup_status": row["lineup_status"].strip().lower(),
+                                "fouls_per90": float(row["fouls_per90"]) if row["fouls_per90"] else None,
                 "mil_manager_tempo": float(row["mil_manager_tempo"]) if row["mil_manager_tempo"] else 0.50,
                 "mil_press_intensity": float(row["mil_press_intensity"]) if row["mil_press_intensity"] else 0.50,
                 "mil_subs_aggressiveness": float(row["mil_subs_aggressiveness"]) if row["mil_subs_aggressiveness"] else 0.50,
@@ -114,6 +115,10 @@ def main(players_csv, legs_csv):
                 else:
                     dropped.append({"leg_id": row["leg_id"], "reason": "unsupported_market"}); continue
         elif sport == "nba":
+                elif market == "fouls" or market == "cards":
+                # Player fouls/cards - Bet365 only. Requires fouls_per90 in CSV
+                fouls_rate = player.get("fouls_per90") or player.get("cards_per90", 0.0)
+                lam = fouls_rate * (minutes/90.0) * usage_adj * tempo_adj
                     if market == "shots":
                     lam = (player["shots_per36"] or 0.0) * (minutes/36.0) * usage_adj * tempo_adj
                 elif market == "sog":
