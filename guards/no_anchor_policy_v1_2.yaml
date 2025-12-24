@@ -1,0 +1,36 @@
+name: NoAnchorPolicy
+version: v1.2
+category: guard
+description: >
+  Forbids usage of Money Line favorites when BCFI indicates trap risk,
+  but allows "Safe Spreads" (Asian Handicap) as an escape hatch.
+
+rules:
+  - name: EliteAwayFade
+    condition: "bcfi >= 0.58 and venue == 'away'"
+    action:
+      forbid_market: "moneyline"
+      allow_alternative:
+        market: "asian_handicap"
+        min_line: 1.5  # Must be +1.5 or better (e.g., +2.0)
+
+  - name: EliteHomeFade
+    condition: "bcfi >= 0.60 and venue == 'home'"
+    action:
+      forbid_market: "moneyline"
+      allow_alternative:
+        market: "asian_handicap"
+        min_line: 1.0  # Home teams are safer, +1.0 (Push on 1-goal loss) is acceptable
+
+  - name: DeepBlockTrap
+    condition: "opponent.profile == 'deep_block' and motivation == 'low'"
+    action:
+      forbid_market: "moneyline"
+      allow_alternative:
+        market: "asian_handicap"
+        min_line: 1.5
+    allowed_when_forbidden:
+      - corners_under
+      - opponent_corners_over
+      - shots_unders
+      - player_under_props
