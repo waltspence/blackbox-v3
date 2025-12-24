@@ -103,6 +103,14 @@ def main(players_csv, legs_csv):
                 elif market == "sog":
                     sog_rate = player["sog_rate"] if player["sog_rate"] is not None else DEFAULT_SOG_RATE
                     lam = (player["shots_per90"] or 0.0) * sog_rate * (minutes/90.0) * usage_adj * tempo_adj
+                                elif market == "goals" or market == "anytime_goal":
+                                                    lam = (player["xg_per90"] or 0.0) * (minutes/90.0) * usage_adj * tempo_adj
+                                                elif market == "assists":
+                                                                    # Note: Requires xa_per90 in player CSV. For now, estimate from passes
+                                                                    xa_est = (player.get("xa_per90") or (player["passes_per90"] or 0.0) * 0.03) if player.get("passes_per90") else 0.0
+                                                                    lam = xa_est * (minutes/90.0) * usage_adj * tempo_adj
+                                                                elif market == "passes":
+                                                                                    lam = (player["passes_per90"] or 0.0) * (minutes/90.0) * usage_adj * tempo_adj
                 else:
                     dropped.append({"leg_id": row["leg_id"], "reason": "unsupported_market"}); continue
         elif sport == "nba":
